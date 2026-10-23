@@ -8,7 +8,7 @@ Convierte el KMZ que se edita en Google Earth en un árbol de archivos de texto 
 ### Formato en el repo
 - **Carpetas superiores** (desde la raíz hasta el nivel de ramal): cada una es un **directorio** con un `_folder.yaml`.
 - **Ramal hacia abajo**: un único **archivo `.kml`** por ramal. Las subcarpetas internas se guardan como `<Folder>` anidados (por ejemplo "Desvío Ingenio Ledesma" dentro de C15).
-- **Placemarks sueltos** en una carpeta que es directorio van en `_sueltos.kml`, dentro de ese mismo directorio.
+- **Placemarks sueltos** en una carpeta que es directorio van en `_loose.kml`, dentro de ese mismo directorio.
 - La raíz del `Document` tiene su propio `_document.yaml`.
 - El orden de los hijos se guarda en `children` dentro del yaml. Los nombres de archivo no determinan el orden.
 - **Nombres de archivo**: slug ASCII (`ramal-a1-cruz-del-eje-alta-cordoba.kml`). El nombre real queda en `<name>` o en el yaml. Si dos hermanos dan el mismo slug, se agrega `-2`, `-3`.
@@ -28,6 +28,11 @@ Solo esto:
 - Dentro de las geometrías: `altitudeMode`, `gx:altitudeMode`, `tessellate`, `extrude`, `gx:drawOrder`
 - La altitud de las coordenadas
 
+### Idioma del código
+- Todos los **identificadores** (módulos, clases, funciones, variables, parámetros) van en **inglés**.
+- Siguen en español los mensajes de la CLI, los comentarios, los docstrings y los commits.
+- También van en inglés los nombres que forman parte de un formato o de la interfaz: claves de `ferromapas.yaml` y `styles.yaml`, flags de la CLI (`--strict`) y nombres de archivo del repo (`_loose.kml`).
+
 ### Casos especiales del KMZ actual
 - **22 estaciones FEPSA** escritas con la sintaxis vieja de KML 2.1: elemento `<S_Estaciones_FEPSA_desde_FEPSA_DDS>` tipado por un `<Schema parent="Placemark">`. Hay que convertirlas a `Placemark`, descartar `latitud` y `longitud`, y agregar `Est` al final de la descripción como `Nombre FEPSA: <Est>`.
   - Están en Roca: Zona Centro / "Olavarría - Bahía Blanca (Vía La Madrid)" (18), Zona Oeste / "Recalde - Pigüé" (2), "Empalme Altavista - Saavedra" (1) y "Olavarría - Bahía Blanca (Vía Pringles)" (1).
@@ -44,7 +49,7 @@ Solo esto:
 ### Dónde cortar (profundidad de directorios)
 En `ferromapas.yaml`, en la raíz del repo:
 ```yaml
-salida: dist/Ferromapas.kmz
+output: dist/Ferromapas.kmz
 split:
   max_dir_depth: 3          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3
   overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
@@ -54,10 +59,10 @@ split:
 Regla: una carpeta es directorio si su profundidad es `<= max_dir_depth` **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`.
 
 ### Estilos (solo en el build)
-En `estilos.yaml`, por prefijo de ruta. El estilo se aplica a todo lo que está debajo:
+En `styles.yaml`, por prefijo de ruta. El estilo se aplica a todo lo que está debajo:
 ```yaml
-default: { color: "#757575", ancho_linea: 2.5, icono: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", escala_icono: 0.4, escala_etiqueta: 0.7, opacidad_poligono: 0.35 }
-estilos:
+default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
+styles:
   ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: { color: "#6A1B9A" }
   ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-mitre:    { color: "#C62828" }
   # ...
@@ -80,19 +85,19 @@ La alternativa razonable es **TypeScript/Node**. Conviene si pensás hacer un vi
 ferromapas-toolkit/
 ├── ferromapas/              # paquete Python
 │   ├── __main__.py          # CLI (argparse): split | build | validate | compare | fmt
-│   ├── model.py             # Carpeta, Placemark, Geometria
-│   ├── lector.py            # KML (de Google Earth o del repo) -> modelo, con política de descarte
-│   ├── escritor.py          # modelo -> KML normalizado (fragmento o documento con estilos)
-│   ├── arbol.py             # modelo <-> src/ (directorios, _folder.yaml, .kml, _sueltos.kml)
-│   ├── estilos.py           # estilos.yaml -> <Style>, asignación por prefijo
-│   ├── validar.py
-│   └── comparar.py
+│   ├── model.py             # Folder, Placemark, Geometry
+│   ├── reader.py            # KML (de Google Earth o del repo) -> modelo, con política de descarte
+│   ├── writer.py            # modelo -> KML normalizado (fragmento o documento con estilos)
+│   ├── tree.py              # modelo <-> src/ (directorios, _folder.yaml, .kml, _loose.kml)
+│   ├── styles.py            # styles.yaml -> <Style>, asignación por prefijo
+│   ├── validate.py
+│   └── compare.py
 ├── tests/
 │   ├── fixtures/mini.kml    # KML sintético con todos los casos raros
 │   └── test_*.py
 ├── src/                     # datos del mapa (los genera split)
 ├── ferromapas.yaml
-├── estilos.yaml
+├── styles.yaml
 ├── pyproject.toml           # entry point: ferromapas = ferromapas.__main__:main
 ├── CLAUDE.md
 └── .github/workflows/ci.yml
@@ -108,7 +113,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - **Listo cuando**: `pip install -e .` funciona, `ferromapas --help` lista los comandos y `pytest` pasa (sin tests).
 
 ### Fase 1 — Modelo y lector
-- `lector.py` lee un `.kml` o un `.kmz` (el `doc.kml` adentro del zip) y devuelve una `Carpeta` raíz.
+- `reader.py` lee un `.kml` o un `.kmz` (el `doc.kml` adentro del zip) y devuelve una `Folder` raíz.
 - Política de elementos:
   - **Conservar**: lo de la sección 1.
   - **Descartar en silencio**: la lista de la sección 1. Se cuenta cuánto se descartó de cada tipo, para mostrar un resumen.
@@ -124,8 +129,8 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
   - 0 errores
 
 ### Fase 2 — Escritor y árbol (split)
-- `escritor.py`: serialización normalizada (sección 1).
-- `arbol.py` / `split`: borra y regenera `src/` aplicando la regla de profundidad, con slugs, `_folder.yaml`, `_document.yaml`, `_sueltos.kml` y `children` en orden.
+- `writer.py`: serialización normalizada (sección 1).
+- `tree.py` / `split`: borra y regenera `src/` aplicando la regla de profundidad, con slugs, `_folder.yaml`, `_document.yaml`, `_loose.kml` y `children` en orden.
   - Si el `_folder.yaml` anterior en la misma ruta tenía claves extra (p. ej. `code`), las conserva.
   - Se niega a correr si `git status --porcelain -- src` no está vacío, salvo que se pase `--force`. Así no pisa ediciones manuales sin commitear.
   - En el YAML, las descripciones multilínea se escriben como bloque literal `|`.
@@ -148,7 +153,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - **Listo cuando**: con el KMZ real, `compare original.kmz dist/Ferromapas.kmz` no muestra diferencias, y el ciclo `build → split` no produce cambios en `git diff`.
 
 ### Fase 5 — Validación
-`ferromapas validate [--estricto]`:
+`ferromapas validate [--strict]`:
 - **Errores**:
   - `children` que apunta a algo inexistente.
   - Un `.kml` que no está normalizado (al releerlo y reescribirlo da distinto).
@@ -158,7 +163,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
   - Anillos de polígono con menos de 4 vértices.
   - Carpetas vacías (hoy hay 6).
   - Placemarks sin nombre.
-- Exit code ≠ 0 si hay errores, o si hay avisos y se usó `--estricto`.
+- Exit code ≠ 0 si hay errores, o si hay avisos y se usó `--strict`.
 
 ### Fase 6 — CI y releases
 - `ci.yml`, en cada push o PR:
@@ -195,7 +200,8 @@ Ver PLAN.md para decisiones de formato; no cambiarlas sin preguntar.
   salvo los listados en PLAN.md §1.
 - Correr `pytest` antes de cada commit. Los tests de ida y vuelta no se pueden saltear.
 - No commitear archivos .kmz ni dist/.
-- Código, mensajes de la CLI y commits en español.
+- Identificadores del código (módulos, clases, funciones, variables) en inglés.
+- Mensajes de la CLI, comentarios, docstrings y commits en español.
 ```
 
 ## 7. Cómo encararlo en Claude Code

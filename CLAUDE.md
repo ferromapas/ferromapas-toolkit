@@ -8,4 +8,5 @@ Ver PLAN.md para decisiones de formato; no cambiarlas sin preguntar.
   salvo los listados en PLAN.md §1.
 - Correr `pytest` antes de cada commit. Los tests de ida y vuelta no se pueden saltear.
 - No commitear archivos .kmz ni dist/.
-- Código, mensajes de la CLI y commits en español.
+- Identificadores del código (módulos, clases, funciones, variables) en inglés.
+- Mensajes de la CLI, comentarios, docstrings y commits en español.
