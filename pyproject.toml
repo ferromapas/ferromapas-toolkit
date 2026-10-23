@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ferromapas"
+version = "0.1.0"
+description = "Convierte el KMZ de Ferromapas (Google Earth) <-> árbol de archivos en src/"
+requires-python = ">=3.12"
+dependencies = ["PyYAML"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+ferromapas = "ferromapas.__main__:main"
+
+[tool.setuptools]
+packages = ["ferromapas"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
