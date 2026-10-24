@@ -1,4 +1,4 @@
-"""CLI de ferromapas: split | build | validate | compare | fmt."""
+"""CLI de ferromapas: split | build | validate | compare | fmt | tree."""
 
 import argparse
 import sys
@@ -9,7 +9,7 @@ from ferromapas.compare import compare, load_source
 from ferromapas.config import load_config
 from ferromapas.reader import ReadError, read
 from ferromapas.styles import StylesError, load_styles
-from ferromapas.tree import SplitError, TreeError, load_tree, split
+from ferromapas.tree import SplitError, TreeError, load_tree, split, tree_view
 from ferromapas.validate import validate
 
 COMMANDS = {
@@ -18,6 +18,7 @@ COMMANDS = {
     "validate": "Valida el contenido de src/",
     "compare": "Compara dos fuentes (.kmz, .kml o directorio src)",
     "fmt": "Normaliza src/ en el lugar",
+    "tree": "Muestra el árbol de archivos de src/",
 }
 
 
@@ -55,20 +56,33 @@ def _build(args: argparse.Namespace) -> int:
 
 def _compare(args: argparse.Namespace) -> int:
     try:
-        diff = compare(load_source(args.a), load_source(args.b))
+        diff = compare(load_source(args.a), load_source(args.b), args.ignore_top_level)
     except (ReadError, TreeError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     if not diff:
         print("Sin diferencias.")
         return 0
+    print(f"Modificados: {len(diff.changed)}")
+    for line in diff.changed:
+        print(f"  ~ {line}\n")
     print(f"Solo en {args.a}: {len(diff.only_a)}")
     for line in diff.only_a:
-        print(f"  - {line}")
+        print(f"  - {line}\n")
     print(f"Solo en {args.b}: {len(diff.only_b)}")
     for line in diff.only_b:
-        print(f"  + {line}")
+        print(f"  + {line}\n")
     return 1
+
+
+def _tree(args: argparse.Namespace) -> int:
+    try:
+        lines = tree_view(args.src, args.depth, args.names)
+    except (ReadError, TreeError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    print("\n".join(lines))
+    return 0
 
 
 def _validate(args: argparse.Namespace) -> int:
@@ -111,11 +125,21 @@ def create_parser() -> argparse.ArgumentParser:
         if name == "compare":
             sub.add_argument("a", help=".kmz, .kml o directorio src")
             sub.add_argument("b", help=".kmz, .kml o directorio src")
+            sub.add_argument(
+                "--ignore-top-level",
+                action="store_true",
+                help="ignora el nombre de la carpeta de primer nivel (para versiones que la renombraron)",
+            )
             sub.set_defaults(func=_compare)
         if name == "validate":
             sub.add_argument("--src", default="src", help="directorio a validar (por defecto: src)")
             sub.add_argument("--strict", action="store_true", help="los avisos también fallan")
             sub.set_defaults(func=_validate)
+        if name == "tree":
+            sub.add_argument("--src", default="src", help="directorio a mostrar (por defecto: src)")
+            sub.add_argument("--depth", type=int, help="niveles de directorios a desplegar (la raíz es 0)")
+            sub.add_argument("--names", action="store_true", help="muestra también el nombre real de cada carpeta")
+            sub.set_defaults(func=_tree)
         if name == "fmt":
             sub.add_argument("--src", default="src", help="directorio a normalizar (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")

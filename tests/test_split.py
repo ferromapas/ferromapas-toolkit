@@ -144,3 +144,23 @@ def test_cli_split_read_error(tmp_path, capsys):
     bad.write_text('<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Foo/></Document></kml>')
     assert main(["split", str(bad), "--src", str(tmp_path / "o")]) == 1
     assert "Foo" in capsys.readouterr().err
+
+
+def test_tree_view(tmp_path, capsys):
+    root = Folder("Doc", None, [pm("suelto"), Folder("Mapa", None, [Folder("Ramal", None, [pm("a"), pm("b")])])])
+    src = tmp_path / "src"
+    split(root, src, Config(max_dir_depth=1), force=True)
+    assert main(["tree", "--src", str(src)]) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert out == [
+        f"{src}/",
+        "├── _loose.kml  (1 placemarks)",
+        "└── mapa/",
+        "    └── ramal.kml  (2 placemarks)",
+    ]
+    assert main(["tree", "--src", str(src), "--depth", "0"]) == 0
+    assert capsys.readouterr().out.splitlines()[-1] == "└── mapa/"
+    assert main(["tree", "--src", str(src), "--names"]) == 0
+    out = capsys.readouterr().out
+    assert "mapa/  # Mapa" in out and "ramal.kml  (2 placemarks)  # Ramal" in out
+    assert main(["tree", "--src", str(tmp_path / "nada")]) == 1

@@ -172,7 +172,14 @@ def load_tree(src: str | Path) -> tuple[Folder, list[str]]:
     return root, warnings
 
 
-def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[str]) -> Folder:
+def _read_directory(
+    directory: Path, yaml_name: str, warnings: list[str]
+) -> tuple[dict, list[str]]:
+    """Lee el yaml de un directorio y devuelve (datos, entradas en orden).
+
+    Las entradas son las de `children` más, al final y con aviso, las que
+    existen en disco pero no figuran.
+    """
     yaml_path = directory / yaml_name
     if not yaml_path.is_file():
         raise TreeError(f"falta {yaml_path}")
@@ -192,6 +199,12 @@ def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[s
         if entry not in listed:
             warnings.append(f"{directory / entry.rstrip('/')}: no está en children de {yaml_path}, se agrega al final")
             entries.append(entry)
+    return data, entries
+
+
+def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[str]) -> Folder:
+    yaml_path = directory / yaml_name
+    data, entries = _read_directory(directory, yaml_name, warnings)
     folder = Folder(data["name"], data.get("description"), [], slug)
     for entry in entries:
         path = directory / entry.rstrip("/")
@@ -211,3 +224,51 @@ def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[s
         else:
             raise TreeError(f"{yaml_path}: entrada inválida en children: {entry!r}")
     return folder
+
+
+def _count_placemarks(folder: Folder) -> int:
+    return sum(1 if isinstance(c, Placemark) else _count_placemarks(c) for c in folder.children)
+
+
+def tree_view(src: str | Path, max_depth: int | None = None, names: bool = False) -> list[str]:
+    """Líneas de un `tree` de src/, en el orden de `children`.
+
+    Los .kml muestran su cantidad de placemarks; con `names`, también el nombre real.
+    `max_depth` limita los niveles de directorios que se despliegan (la raíz es 0).
+    """
+    src = Path(src)
+    if not (src / DOCUMENT_YAML).is_file():
+        raise TreeError(f"{src}: no existe {DOCUMENT_YAML}")
+    data, entries = _read_directory(src, DOCUMENT_YAML, [])
+    lines = [f"{src}/" + (f"  # {data['name']}" if names else "")]
+    _view_directory(src, entries, "", 0, max_depth, names, lines)
+    return lines
+
+
+def _view_directory(
+    directory: Path,
+    entries: list[str],
+    prefix: str,
+    depth: int,
+    max_depth: int | None,
+    names: bool,
+    lines: list[str],
+) -> None:
+    for i, entry in enumerate(entries):
+        last = i == len(entries) - 1
+        branch, indent = ("└── ", "    ") if last else ("├── ", "│   ")
+        path = directory / entry.rstrip("/")
+        if entry.endswith("/"):
+            data, children = _read_directory(path, FOLDER_YAML, [])
+            lines.append(f"{prefix}{branch}{entry}" + (f"  # {data['name']}" if names else ""))
+            if max_depth is None or depth < max_depth:
+                _view_directory(path, children, prefix + indent, depth + 1, max_depth, names, lines)
+        else:
+            if not path.is_file():
+                raise TreeError(f"{directory}: no existe el archivo {entry}")
+            folder, _ = read(path)
+            count = _count_placemarks(folder)
+            label = f"{prefix}{branch}{entry}  ({count} placemarks)"
+            if names and entry != LOOSE:
+                label += f"  # {folder.name}"
+            lines.append(label)

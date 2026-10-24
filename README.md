@@ -92,14 +92,39 @@ Revisa `src/`.
 
 Sale con código 1 si hay errores, o si hay avisos y se usó `--strict`.
 
-### `ferromapas compare A B`
+### `ferromapas compare A B [--ignore-top-level]`
 
 Compara dos fuentes. Cada una puede ser un `.kmz`, un `.kml` o un directorio `src`.
 
-Imprime las carpetas y los placemarks que están solo en A o solo en B. No importa el orden, y las coordenadas se comparan con 6 decimales. Sale con código 1 si hay diferencias. Sirve como diff semántico:
+Imprime dos tipos de diferencias:
+
+- **Modificados** (`~`): el mismo elemento (misma ruta, nombre y tipo) en ambos lados, pero con otro contenido. La línea dice qué cambió, por ejemplo `coordenada: A → B`, `vértices: 2473 → 2521`, `1 de 39 vértices distintos` o `descripción: 'a' → 'b'`.
+- **Solo en A / solo en B** (`-` / `+`): carpetas y placemarks que no tienen equivalente en el otro lado, incluidos los que cambiaron de nombre o de carpeta.
+
+No importa el orden, y las coordenadas se comparan con 6 decimales. Sale con código 1 si hay diferencias. Con `--ignore-top-level` ignora el nombre de la carpeta de primer nivel, que forma parte de la ruta de todo: sirve para comparar versiones que la renombraron (por ejemplo "Ferromapas 1.0.0" y "Ferromapas (en Edición)"). Sirve como diff semántico:
 
 ```bash
 ferromapas compare Ferromapas.kmz dist/Ferromapas.kmz   # "Sin diferencias."
+```
+
+### `ferromapas tree [--src DIR] [--depth N] [--names]`
+
+Muestra cómo quedaron los archivos de `src/`, como el comando `tree`, en el orden de `children`. Cada `.kml` indica su cantidad de placemarks.
+
+- `--depth N` limita cuántos niveles de directorios se despliegan (la raíz es 0).
+- `--names` agrega el nombre real de cada carpeta (los nombres de archivo son slugs).
+
+```
+src/
+└── ferromapas-1-0-0/
+    ├── ferrocarriles-argentinos/
+    │   ├── ferrocarril-mitre/
+    │   │   ├── puerto-san-lorenzo.kml  (22 placemarks)
+    │   │   ├── rosario-norte.kml  (8 placemarks)
+    │   │   └── ...
+    │   └── ...
+    └── ferrocarriles-de-chile/
+        └── ferrocarril-trasandino-central-chileno.kml  (15 placemarks)
 ```
 
 ### `ferromapas fmt [--src DIR] [--config ARCHIVO]`
