@@ -3,10 +3,11 @@ import pytest
 from ferromapas.__main__ import COMMANDS, main
 
 
-@pytest.mark.parametrize("command", [c for c in COMMANDS if c not in ("split", "build", "compare", "fmt")])
-def test_command_not_implemented(command, capsys):
-    assert main([command]) == 1
-    assert "no está implementado" in capsys.readouterr().err
+@pytest.mark.parametrize("command", COMMANDS)
+def test_command_requires_valid_arguments(command):
+    # Todos los comandos están implementados; sin sus argumentos obligatorios, argparse falla.
+    with pytest.raises(SystemExit):
+        main([command, "--opcion-inexistente"])
 
 
 def test_no_command_fails():

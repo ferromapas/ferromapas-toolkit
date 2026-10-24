@@ -10,6 +10,7 @@ from ferromapas.compare import compare, load_source
 from ferromapas.config import load_config
 from ferromapas.reader import ReadError, read
 from ferromapas.styles import StylesError, load_styles
+from ferromapas.validate import validate
 from ferromapas.tree import SplitError, TreeError, load_tree, split
 
 COMMANDS = {
@@ -19,11 +20,6 @@ COMMANDS = {
     "compare": "Compara dos fuentes (.kmz, .kml o directorio src)",
     "fmt": "Normaliza src/ en el lugar",
 }
-
-
-def _not_implemented(args: argparse.Namespace) -> int:
-    print(f"El comando '{args.command}' todavía no está implementado.", file=sys.stderr)
-    return 1
 
 
 def _split(args: argparse.Namespace) -> int:
@@ -76,6 +72,16 @@ def _compare(args: argparse.Namespace) -> int:
     return 1
 
 
+def _validate(args: argparse.Namespace) -> int:
+    report = validate(args.src)
+    for error in report.errors:
+        print(f"Error: {error}")
+    for warning in report.warnings:
+        print(f"Aviso: {warning}")
+    print(f"{len(report.errors)} errores, {len(report.warnings)} avisos")
+    return report.exit_code(args.strict)
+
+
 def _fmt(args: argparse.Namespace) -> int:
     try:
         root, warnings = load_tree(args.src)
@@ -97,7 +103,6 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", metavar="comando", required=True)
     for name, help_text in COMMANDS.items():
         sub = subparsers.add_parser(name, help=help_text, description=help_text)
-        sub.set_defaults(func=_not_implemented)
         if name == "split":
             sub.add_argument("input", help="archivo .kmz o .kml de origen")
             sub.add_argument("--src", default="src", help="directorio de salida (por defecto: src)")
@@ -108,6 +113,10 @@ def create_parser() -> argparse.ArgumentParser:
             sub.add_argument("a", help=".kmz, .kml o directorio src")
             sub.add_argument("b", help=".kmz, .kml o directorio src")
             sub.set_defaults(func=_compare)
+        if name == "validate":
+            sub.add_argument("--src", default="src", help="directorio a validar (por defecto: src)")
+            sub.add_argument("--strict", action="store_true", help="los avisos también fallan")
+            sub.set_defaults(func=_validate)
         if name == "fmt":
             sub.add_argument("--src", default="src", help="directorio a normalizar (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
