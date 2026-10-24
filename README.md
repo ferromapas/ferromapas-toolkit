@@ -18,6 +18,24 @@ pytest                      # opcional: corre los tests
 
 Esto instala el comando `ferromapas`.
 
+### Sin instalar el paquete
+
+No hace falta instalarlo: alcanza con tener PyYAML y correr el módulo desde la raíz del repo.
+
+```bash
+# Opción A: usar el entorno virtual del repo, que ya tiene PyYAML
+source .venv/bin/activate
+python -m ferromapas --help
+
+# Opción B: instalar PyYAML en tu Python
+pip install PyYAML
+python3 -m ferromapas split ../datos/Ferromapas.kmz
+```
+
+Si ves `ModuleNotFoundError: No module named 'yaml'`, es que falta PyYAML en el Python que estás usando: aplicá una de las dos opciones. Si `pip` falla con `externally-managed-environment`, usá la A.
+
+En todos los ejemplos de este README, `ferromapas <comando>` equivale a `python3 -m ferromapas <comando>`. Hay que ejecutarlo desde la raíz del repo; desde otro directorio, el comando `ferromapas` instalado con `pip install -e .` es más cómodo.
+
 ## Flujo de trabajo
 
 ```

@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-
 from pathlib import Path
 
 from ferromapas.build import build_kml, write_kml, write_kmz
@@ -10,8 +9,8 @@ from ferromapas.compare import compare, load_source
 from ferromapas.config import load_config
 from ferromapas.reader import ReadError, read
 from ferromapas.styles import StylesError, load_styles
-from ferromapas.validate import validate
 from ferromapas.tree import SplitError, TreeError, load_tree, split
+from ferromapas.validate import validate
 
 COMMANDS = {
     "split": "Convierte un KMZ/KML en el árbol de archivos de src/",
