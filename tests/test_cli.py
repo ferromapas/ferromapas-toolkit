@@ -3,7 +3,7 @@ import pytest
 from ferromapas.__main__ import COMMANDS, main
 
 
-@pytest.mark.parametrize("command", COMMANDS)
+@pytest.mark.parametrize("command", [c for c in COMMANDS if c != "split"])
 def test_command_not_implemented(command, capsys):
     assert main([command]) == 1
     assert "no está implementado" in capsys.readouterr().err

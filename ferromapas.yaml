@@ -1,0 +1,6 @@
+output: dist/Ferromapas.kmz
+split:
+  max_dir_depth: 3          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3
+  overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
+    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 4   # Línea > Ramal
+    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-roca: 4       # Zona > tramo (hasta reorganizar)
