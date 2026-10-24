@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+<Document>
+  <name>Mini 2.1</name>
+  <Schema name="S_FEPSA" parent="Placemark">
+    <SimpleField name="Est" type="string"/>
+    <SimpleField name="latitud" type="double"/>
+    <SimpleField name="longitud" type="double"/>
+  </Schema>
+  <Folder>
+    <name>Tramo</name>
+    <S_FEPSA>
+      <name>Estación A</name>
+      <description>Texto previo</description>
+      <Point><coordinates>-60.0,-37.0,0</coordinates></Point>
+      <Est>EST A</Est>
+      <latitud>-37.0</latitud>
+      <longitud>-60.0</longitud>
+    </S_FEPSA>
+    <S_FEPSA>
+      <name>Estación B</name>
+      <Point><coordinates>-60.5,-37.5,0</coordinates></Point>
+      <Est>EST B</Est>
+    </S_FEPSA>
+  </Folder>
+</Document>
+</kml>

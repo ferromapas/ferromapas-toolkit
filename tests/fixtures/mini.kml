@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+  <name>Mini</name>
+  <atom:author><atom:name>alguien</atom:name></atom:author>
+  <Style id="s1"><LineStyle><color>ff0000ff</color></LineStyle></Style>
+  <StyleMap id="sm1"><Pair><key>normal</key><styleUrl>#s1</styleUrl></Pair></StyleMap>
+  <Schema name="S_FEPSA" id="S_FEPSA" parent="Placemark">
+    <SimpleField name="Est" type="string"/>
+  </Schema>
+  <LookAt><longitude>-64</longitude><latitude>-34</latitude></LookAt>
+  <Placemark>
+    <name>Suelto inicial</name>
+    <styleUrl>#sm1</styleUrl>
+    <Point><coordinates>-64.1,-31.4,350</coordinates></Point>
+  </Placemark>
+  <Folder>
+    <name>Ferrocarril X</name>
+    <description>Línea
+principal</description>
+    <open>1</open>
+    <visibility>0</visibility>
+    <Snippet maxLines="0"/>
+    <Folder>
+      <name>Ramal 1</name>
+      <Placemark>
+        <name>Vía</name>
+        <description>  </description>
+        <LookAt><longitude>-64</longitude></LookAt>
+        <LineString>
+          <extrude>1</extrude>
+          <tessellate>1</tessellate>
+          <altitudeMode>clampToGround</altitudeMode>
+          <gx:drawOrder>1</gx:drawOrder>
+          <coordinates>-64.0,-31.0,0 -64.5,-31.5,0 -65.0,-32.0,0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>Estación</name>
+        <description>Con datos</description>
+        <ExtendedData><Data name="foro"><value>basura</value></Data></ExtendedData>
+        <Point><coordinates>-64.5,-31.5</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Dato de ejemplo</name>
+        <ExtendedData><SchemaData schemaUrl="#x"><SimpleData name="a">1</SimpleData></SchemaData></ExtendedData>
+        <Point><coordinates>-64.6,-31.6</coordinates></Point>
+      </Placemark>
+    </Folder>
+    <Placemark>
+      <name>zoologico</name>
+    </Placemark>
+    <Placemark>
+      <name>Terreno</name>
+      <Polygon>
+        <outerBoundaryIs><LinearRing><coordinates>
+          -60,-30,0 -60,-31,0 -61,-31,0 -61,-30,0 -60,-30,0
+        </coordinates></LinearRing></outerBoundaryIs>
+        <innerBoundaryIs><LinearRing><coordinates>
+          -60.2,-30.2,0 -60.2,-30.4,0 -60.4,-30.4,0 -60.2,-30.2,0
+        </coordinates></LinearRing></innerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Folder>
+  <Placemark>
+    <name>Suelto entre carpetas</name>
+    <Point><coordinates>-58.4,-34.6</coordinates></Point>
+  </Placemark>
+  <Folder>
+    <name>Vacía</name>
+  </Folder>
+</Document>
+</kml>
