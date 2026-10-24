@@ -112,3 +112,14 @@ def test_unknown_namespace_fails():
     data = b'<kml xmlns="http://www.opengis.net/kml/2.2"><Document><x:Y xmlns:x="urn:z"/></Document></kml>'
     with pytest.raises(ReadError, match="namespace desconocido"):
         read_bytes(data)
+
+
+def test_nested_document_becomes_folder():
+    root, report = read_bytes(
+        kml("<Folder><name>F</name><Document><name>Doc</name>"
+            "<Placemark><name>P</name><Point><coordinates>-60,-30</coordinates></Point></Placemark>"
+            "</Document></Folder>")
+    )  # fmt: skip
+    assert root.children[0].children[0].name == "Doc"
+    assert (report.folders, report.nested_documents) == (1, 1)
+    assert "<Document> anidado" in report.warnings[0]

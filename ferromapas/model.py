@@ -36,3 +36,5 @@ class Folder:
     name: str
     description: str | None = None
     children: list["Folder | Placemark"] = field(default_factory=list)
+    # Nombre de archivo/directorio en src/ (solo si vino de un árbol); no cuenta para la igualdad.
+    slug: str | None = field(default=None, compare=False, repr=False)

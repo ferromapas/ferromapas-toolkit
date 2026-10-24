@@ -1,0 +1,8 @@
+default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
+styles:
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano:    { color: "#6A1B9A" }
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-mitre:       { color: "#C62828" }
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-roca:        { color: "#0288D1" }
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-san-martin:  { color: "#1565C0" }
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-sarmiento:   { color: "#2E7D32" }
+  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-urquiza:     { color: "#EF6C00" }

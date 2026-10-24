@@ -56,6 +56,7 @@ class ReadReport:
     """Resumen de lo leído y de lo descartado."""
 
     folders: int = 0
+    nested_documents: int = 0  # <Document> dentro de una carpeta, tratados como Folder
     points: int = 0
     linestrings: int = 0
     polygons: int = 0
@@ -65,7 +66,7 @@ class ReadReport:
 
     def summary(self) -> str:
         lines = [
-            f"Carpetas: {self.folders}",
+            f"Carpetas: {self.folders} (más {self.nested_documents} Document anidados)",
             f"LineString: {self.linestrings}",
             f"Point: {self.points} (de los cuales {self.converted} convertidos de Schema)",
             f"Polygon: {self.polygons}",
@@ -166,12 +167,16 @@ class _Reader:
         else:
             raise ReadError(f"{path}: elemento desconocido <{tag}>")
 
-    def _folder(self, element: ET.Element, parent_path: list[str], is_root=False) -> Folder:
+    def _folder(
+        self, element: ET.Element, parent_path: list[str], is_root=False, nested_document=False
+    ) -> Folder:
         name_el = element.find("{*}name")
         name = _text(name_el).strip() if name_el is not None else ""
         path_list = [*parent_path, name]
         path = " / ".join(path_list)
-        if not is_root:
+        if nested_document:
+            self.report.nested_documents += 1
+        elif not is_root:
             self.report.folders += 1
         folder = Folder(name=name)
         for child in element:
@@ -182,6 +187,10 @@ class _Reader:
                 folder.description = _description(child)
             elif tag == "Folder":
                 folder.children.append(self._folder(child, path_list))
+            elif tag == "Document":
+                # Un Document anidado es solo un contenedor: se trata como Folder.
+                self.report.warnings.append(f"{path}: <Document> anidado convertido a Folder")
+                folder.children.append(self._folder(child, path_list, nested_document=True))
             elif tag == "Placemark":
                 placemark = self._placemark(child, path)
                 if placemark is not None:

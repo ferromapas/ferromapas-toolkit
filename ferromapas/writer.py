@@ -1,5 +1,6 @@
 """Escritor de KML normalizado y determinístico (PLAN.md §1, Normalización)."""
 
+from collections.abc import Callable
 from xml.sax.saxutils import escape
 
 from ferromapas.model import Coord, Folder, Geometry, LineString, Placemark, Point, Polygon
@@ -27,7 +28,26 @@ def folder_document(folder: Folder) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _folder(folder: Folder, level: int, out: list[str]) -> None:
+# Dado un Placemark, devuelve el id del estilo que le corresponde.
+StyleOf = Callable[[Placemark], str]
+
+
+def styled_document(root: Folder, style_xml: list[str], style_of: StyleOf) -> str:
+    """Documento completo: <Document> con los <Style> y todo el árbol con styleUrl."""
+    lines = [HEADER, KML_OPEN, f"{INDENT}<Document>", f"{INDENT * 2}<name>{escape(root.name)}</name>"]
+    if root.description:
+        lines.append(f"{INDENT * 2}<description>{escape(root.description)}</description>")
+    lines.extend(style_xml)
+    for child in root.children:
+        if isinstance(child, Folder):
+            _folder(child, 2, lines, style_of)
+        else:
+            _placemark(child, 2, lines, style_of)
+    lines += [f"{INDENT}</Document>", "</kml>"]
+    return "\n".join(lines) + "\n"
+
+
+def _folder(folder: Folder, level: int, out: list[str], style_of: StyleOf | None = None) -> None:
     pad = INDENT * level
     out.append(f"{pad}<Folder>")
     out.append(f"{pad}{INDENT}<name>{escape(folder.name)}</name>")
@@ -35,19 +55,23 @@ def _folder(folder: Folder, level: int, out: list[str]) -> None:
         out.append(f"{pad}{INDENT}<description>{escape(folder.description)}</description>")
     for child in folder.children:
         if isinstance(child, Folder):
-            _folder(child, level + 1, out)
+            _folder(child, level + 1, out, style_of)
         else:
-            _placemark(child, level + 1, out)
+            _placemark(child, level + 1, out, style_of)
     out.append(f"{pad}</Folder>")
 
 
-def _placemark(placemark: Placemark, level: int, out: list[str]) -> None:
+def _placemark(
+    placemark: Placemark, level: int, out: list[str], style_of: StyleOf | None = None
+) -> None:
     pad = INDENT * level
     out.append(f"{pad}<Placemark>")
     out.append(f"{pad}{INDENT}<name>{escape(placemark.name)}</name>")
     if placemark.description:
         out.append(f"{pad}{INDENT}<description>{escape(placemark.description)}</description>")
-    _geometry(placemark.geometry, level + 1, out)
+    if style_of is not None:
+        out.append(f"{pad}{INDENT}<styleUrl>#{style_of(placemark)}</styleUrl>")
+    _geometry(placemark.geometry, level + 1, out, tessellate=style_of is not None)
     out.append(f"{pad}</Placemark>")
 
 
@@ -67,12 +91,14 @@ def _ring(tag: str, coords: list[Coord], level: int, out: list[str]) -> None:
     out.append(f"{pad}</{tag}>")
 
 
-def _geometry(geometry: Geometry, level: int, out: list[str]) -> None:
+def _geometry(geometry: Geometry, level: int, out: list[str], tessellate: bool = False) -> None:
     pad = INDENT * level
     if isinstance(geometry, Point):
         out.append(f"{pad}<Point><coordinates>{format_coord(geometry.coord)}</coordinates></Point>")
     elif isinstance(geometry, LineString):
         out.append(f"{pad}<LineString>")
+        if tessellate:
+            out.append(f"{pad}{INDENT}<tessellate>1</tessellate>")
         _coordinates(geometry.coords, level + 1, out)
         out.append(f"{pad}</LineString>")
     elif isinstance(geometry, Polygon):

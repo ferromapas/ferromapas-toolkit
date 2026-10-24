@@ -10,6 +10,7 @@ import yaml
 
 from ferromapas.config import Config
 from ferromapas.model import Folder, Placemark
+from ferromapas.reader import read
 from ferromapas.writer import folder_document
 
 LOOSE = "_loose.kml"
@@ -155,3 +156,58 @@ def split(root: Folder, src: str | Path, config: Config, force: bool = False) ->
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content.encode("utf-8"))
     return len(files)
+
+
+class TreeError(Exception):
+    """src/ inconsistente: falta algo que `children` lista o un archivo es inválido."""
+
+
+def load_tree(src: str | Path) -> tuple[Folder, list[str]]:
+    """Carga src/ en un modelo. Devuelve la raíz y los avisos."""
+    src = Path(src)
+    warnings: list[str] = []
+    if not (src / DOCUMENT_YAML).is_file():
+        raise TreeError(f"{src}: no existe {DOCUMENT_YAML}")
+    root = _load_directory(src, DOCUMENT_YAML, "", warnings)
+    return root, warnings
+
+
+def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[str]) -> Folder:
+    yaml_path = directory / yaml_name
+    if not yaml_path.is_file():
+        raise TreeError(f"falta {yaml_path}")
+    data = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+    if "name" not in data:
+        raise TreeError(f"{yaml_path}: falta 'name'")
+    entries = [str(e) for e in data.get("children") or []]
+    for entry in entries:
+        if entry.rstrip("/") != Path(entry).name or entry in ("", "/", ".", ".."):
+            raise TreeError(f"{yaml_path}: entrada inválida en children: {entry!r}")
+    listed = set(entries)
+    extra = sorted(
+        [f"{p.name}/" for p in directory.iterdir() if p.is_dir() and (p / FOLDER_YAML).is_file()]
+        + [p.name for p in directory.iterdir() if p.is_file() and p.suffix == ".kml"]
+    )
+    for entry in extra:
+        if entry not in listed:
+            warnings.append(f"{directory / entry.rstrip('/')}: no está en children de {yaml_path}, se agrega al final")
+            entries.append(entry)
+    folder = Folder(data["name"], data.get("description"), [], slug)
+    for entry in entries:
+        path = directory / entry.rstrip("/")
+        if entry.endswith("/"):
+            if not path.is_dir():
+                raise TreeError(f"{yaml_path}: no existe el directorio {entry}")
+            folder.children.append(_load_directory(path, FOLDER_YAML, entry[:-1], warnings))
+        elif entry.endswith(".kml"):
+            if not path.is_file():
+                raise TreeError(f"{yaml_path}: no existe el archivo {entry}")
+            kml_folder, _ = read(path)
+            if entry == LOOSE:
+                folder.children.extend(kml_folder.children)
+            else:
+                kml_folder.slug = entry.removesuffix(".kml")
+                folder.children.append(kml_folder)
+        else:
+            raise TreeError(f"{yaml_path}: entrada inválida en children: {entry!r}")
+    return folder
