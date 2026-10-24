@@ -17,7 +17,7 @@ def build_kml(root: Folder, styles: Styles) -> str:
     return styled_document(root, all_style_xml(styles), lambda pm: style_ids[id(pm)])
 
 
-def write_kmz(kml: str, output: str | Path) -> None:
+def write_kmz(kml: str | bytes, output: str | Path) -> None:
     """Empaqueta el KML como doc.kml dentro de un ZIP determinístico."""
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -25,7 +25,7 @@ def write_kmz(kml: str, output: str | Path) -> None:
     info.compress_type = zipfile.ZIP_DEFLATED
     info.external_attr = 0o644 << 16
     with zipfile.ZipFile(output, "w") as zf:
-        zf.writestr(info, kml.encode("utf-8"))
+        zf.writestr(info, kml.encode("utf-8") if isinstance(kml, str) else kml)
 
 
 def write_kml(kml: str, output: str | Path) -> None:

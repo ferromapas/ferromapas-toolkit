@@ -78,20 +78,27 @@ class ReadReport:
         return "\n".join(lines)
 
 
+def extract_kml(kmz: str | Path) -> tuple[bytes, list[str]]:
+    """Devuelve el doc.kml de un KMZ (o el primer .kml) y los demás archivos que contiene."""
+    kmz = Path(kmz)
+    try:
+        zf = zipfile.ZipFile(kmz)
+    except zipfile.BadZipFile:
+        raise ReadError(f"{kmz}: no es un KMZ válido (ZIP corrupto)") from None
+    with zf:
+        names = [n for n in zf.namelist() if not n.endswith("/")]
+        inner = "doc.kml" if "doc.kml" in names else next(
+            (n for n in names if n.lower().endswith(".kml")), None
+        )
+        if inner is None:
+            raise ReadError(f"{kmz}: el KMZ no contiene ningún .kml")
+        return zf.read(inner), [n for n in names if n != inner]
+
+
 def read(path: str | Path) -> tuple[Folder, ReadReport]:
     """Lee un .kml o .kmz y devuelve la carpeta raíz (el Document) y el resumen."""
     path = Path(path)
-    if path.suffix.lower() == ".kmz":
-        with zipfile.ZipFile(path) as zf:
-            names = zf.namelist()
-            inner = "doc.kml" if "doc.kml" in names else next(
-                (n for n in names if n.lower().endswith(".kml")), None
-            )
-            if inner is None:
-                raise ReadError(f"{path}: el KMZ no contiene ningún .kml")
-            data = zf.read(inner)
-    else:
-        data = path.read_bytes()
+    data = extract_kml(path)[0] if path.suffix.lower() == ".kmz" else path.read_bytes()
     return read_bytes(data)
 
 

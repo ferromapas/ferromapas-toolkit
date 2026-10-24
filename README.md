@@ -127,6 +127,14 @@ src/
         └── ferrocarril-trasandino-central-chileno.kml  (15 placemarks)
 ```
 
+### `ferromapas kmz2kml ENTRADA [-o SALIDA] [--force]` y `ferromapas kml2kmz ENTRADA [-o SALIDA] [--force]`
+
+Convierten un archivo entre `.kmz` y `.kml`. Es una conversión directa del archivo: **no pasa por el modelo**, así que se conserva todo el contenido (estilos, vistas, etc.).
+
+- `kmz2kml` extrae el `doc.kml` del KMZ. Si el KMZ trae otros archivos (por ejemplo íconos), avisa que no se copian.
+- `kml2kmz` empaqueta el KML como `doc.kml`. El resultado es reproducible: la misma entrada da el mismo archivo.
+- Sin `-o`, la salida tiene el nombre de la entrada con la otra extensión. Si ya existe, se niega a pisarla salvo con `--force`.
+
 ### `ferromapas fmt [--src DIR] [--config ARCHIVO]`
 
 Normaliza `src/` en el lugar: lo carga y lo vuelve a escribir. Útil después de editar `.kml` o `.yaml` a mano. A diferencia de `split`, conserva tus ediciones, así que no exige que `src/` esté limpio.
