@@ -166,6 +166,8 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - Exit code ≠ 0 si hay errores, o si hay avisos y se usó `--strict`.
 
 ### Fase 6 — CI y releases
+**Estado: pendiente.** Las fases 0 a 5 están implementadas; esta queda para después de probar el programa a mano.
+
 - `ci.yml`, en cada push o PR:
   1. `pip install -e .[dev]` y `pytest`
   2. `ferromapas validate`
