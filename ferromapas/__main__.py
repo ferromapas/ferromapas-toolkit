@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from ferromapas.build import build_kml, write_kml, write_kmz
+from ferromapas.compare import compare, load_source
 from ferromapas.config import load_config
 from ferromapas.reader import ReadError, read
 from ferromapas.styles import StylesError, load_styles
@@ -57,6 +58,37 @@ def _build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _compare(args: argparse.Namespace) -> int:
+    try:
+        diff = compare(load_source(args.a), load_source(args.b))
+    except (ReadError, TreeError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    if not diff:
+        print("Sin diferencias.")
+        return 0
+    print(f"Solo en {args.a}: {len(diff.only_a)}")
+    for line in diff.only_a:
+        print(f"  - {line}")
+    print(f"Solo en {args.b}: {len(diff.only_b)}")
+    for line in diff.only_b:
+        print(f"  + {line}")
+    return 1
+
+
+def _fmt(args: argparse.Namespace) -> int:
+    try:
+        root, warnings = load_tree(args.src)
+        count = split(root, args.src, load_config(args.config), force=True)
+    except (ReadError, TreeError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    for warning in warnings:
+        print(f"Aviso: {warning}", file=sys.stderr)
+    print(f"Se normalizaron {count} archivos en {args.src}")
+    return 0
+
+
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ferromapas",
@@ -72,6 +104,14 @@ def create_parser() -> argparse.ArgumentParser:
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
             sub.add_argument("--force", action="store_true", help="pisar src/ aunque tenga cambios sin commitear")
             sub.set_defaults(func=_split)
+        if name == "compare":
+            sub.add_argument("a", help=".kmz, .kml o directorio src")
+            sub.add_argument("b", help=".kmz, .kml o directorio src")
+            sub.set_defaults(func=_compare)
+        if name == "fmt":
+            sub.add_argument("--src", default="src", help="directorio a normalizar (por defecto: src)")
+            sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
+            sub.set_defaults(func=_fmt)
         if name == "build":
             sub.add_argument("--src", default="src", help="directorio de origen (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
