@@ -51,10 +51,10 @@ En `ferromapas.yaml`, en la raíz del repo:
 ```yaml
 output: dist/Ferromapas.kmz
 split:
-  max_dir_depth: 3          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3
+  max_dir_depth: 4          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
   overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 4   # Línea > Ramal
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-roca: 4       # Zona > tramo (hasta reorganizar)
+    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 5   # Línea > Ramal > subcarpetas
+    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-roca: 5       # Zona > tramo > subcarpetas (hasta reorganizar)
 ```
 Regla: una carpeta es directorio si su profundidad es `<= max_dir_depth` **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`.
 

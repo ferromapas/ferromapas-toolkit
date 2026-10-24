@@ -174,9 +174,9 @@ Una entrada que termina en `/` es un directorio y una que termina en `.kml` es u
 ```yaml
 output: dist/Ferromapas.kmz
 split:
-  max_dir_depth: 3          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3
+  max_dir_depth: 4          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
   overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 4
+    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 5
 ```
 
 Una carpeta es directorio si su profundidad es menor o igual al máximo **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`. Si cambiás estos valores, volvé a correr `split` para reorganizar `src/`.
