@@ -110,7 +110,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 ### Fase 0 — Esqueleto
 - `pyproject.toml`, paquete vacío, CLI con subcomandos que imprimen "no implementado".
 - `.gitignore` (`dist/`, `*.kmz`, `__pycache__/`), `CLAUDE.md` (ver sección 6), tests con `pytest`.
-- **Listo cuando**: `pip install -e .` funciona, `ferromapas --help` lista los comandos y `pytest` pasa (sin tests).
+- **Listo cuando**: `pip install -e .` funciona, `ferromapas-toolkit --help` lista los comandos y `pytest` pasa (sin tests).
 
 ### Fase 1 — Modelo y lector
 - `reader.py` lee un `.kml` o un `.kmz` (el `doc.kml` adentro del zip) y devuelve una `Folder` raíz.
@@ -135,7 +135,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
   - Se niega a correr si `git status --porcelain -- src` no está vacío, salvo que se pase `--force`. Así no pisa ediciones manuales sin commitear.
   - En el YAML, las descripciones multilínea se escriben como bloque literal `|`.
 - **Listo cuando**:
-  - `ferromapas split Ferromapas.kmz` genera el árbol.
+  - `ferromapas-toolkit split Ferromapas.kmz` genera el árbol.
   - Belgrano queda cortado en Línea / Ramal, Mitre en tramos y Roca en Zona / tramo.
   - Las 2 carpetas "Río Tercero - Córdoba" de Mitre quedan como `rio-tercero-cordoba` y `rio-tercero-cordoba-2`.
 
@@ -148,12 +148,12 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 ### Fase 4 — Ida y vuelta (lo más importante)
 - **Test de idempotencia**: `split(mini) → src1 → build → split → src2`, y `src1 == src2` byte por byte.
 - **Test semántico**: el multiconjunto `(camino de carpetas, nombre, tipo, coordenadas)` es el mismo en el original y en el reconstruido.
-- `ferromapas compare A B`: acepta `.kmz`, `.kml` o directorio `src`. Imprime los elementos que están solo en A o solo en B, y las carpetas agregadas o eliminadas. Sirve como diff semántico para los PR.
-- `ferromapas fmt`: normaliza `src/` en el lugar (cargar y volver a escribir).
+- `ferromapas-toolkit compare A B`: acepta `.kmz`, `.kml` o directorio `src`. Imprime los elementos que están solo en A o solo en B, y las carpetas agregadas o eliminadas. Sirve como diff semántico para los PR.
+- `ferromapas-toolkit fmt`: normaliza `src/` en el lugar (cargar y volver a escribir).
 - **Listo cuando**: con el KMZ real, `compare original.kmz dist/Ferromapas.kmz` no muestra diferencias, y el ciclo `build → split` no produce cambios en `git diff`.
 
 ### Fase 5 — Validación
-`ferromapas validate [--strict]`:
+`ferromapas-toolkit validate [--strict]`:
 - **Errores**:
   - `children` que apunta a algo inexistente.
   - Un `.kml` que no está normalizado (al releerlo y reescribirlo da distinto).
@@ -170,8 +170,8 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 
 - `ci.yml`, en cada push o PR:
   1. `pip install -e .[dev]` y `pytest`
-  2. `ferromapas validate`
-  3. `ferromapas build`, luego `ferromapas split dist/Ferromapas.kmz --force`, y después `git diff --exit-code src`. Esto garantiza que `src` está normalizado.
+  2. `ferromapas-toolkit validate`
+  3. `ferromapas-toolkit build`, luego `ferromapas-toolkit split dist/Ferromapas.kmz --force`, y después `git diff --exit-code src`. Esto garantiza que `src` está normalizado.
 - En cada tag `v*`: build y `gh release create $TAG dist/Ferromapas.kmz`.
 
 ### Fase 7 — Importación inicial
@@ -181,10 +181,10 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 ## 5. Flujo de trabajo diario
 
 ```
-ferromapas build                     # dist/Ferromapas.kmz
+ferromapas-toolkit build # dist/Ferromapas.kmz
 # abrir en Google Earth, editar, "Guardar lugar como…" sobre el mismo archivo
-ferromapas split dist/Ferromapas.kmz
-git diff                              # o: ferromapas compare HEAD-build dist/Ferromapas.kmz
+ferromapas-toolkit split dist/Ferromapas.kmz
+git diff                              # o: ferromapas-toolkit compare HEAD-build dist/Ferromapas.kmz
 git commit
 ```
 Regla: **una sola fuente por vez**. Siempre `build` antes de abrir en Google Earth. Si editás un `.kml` a mano, hacé commit antes del próximo `split`.

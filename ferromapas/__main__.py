@@ -142,7 +142,7 @@ def _fmt(args: argparse.Namespace) -> int:
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="ferromapas",
+        prog="ferromapas-toolkit",
         description="Versiona en git el mapa ferroviario de Ferromapas.",
     )
     subparsers = parser.add_subparsers(dest="command", metavar="comando", required=True)

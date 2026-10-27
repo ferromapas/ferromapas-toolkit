@@ -34,14 +34,14 @@ python3 -m ferromapas split ../datos/Ferromapas.kmz
 
 Si ves `ModuleNotFoundError: No module named 'yaml'`, es que falta PyYAML en el Python que estás usando: aplicá una de las dos opciones. Si `pip` falla con `externally-managed-environment`, usá la A.
 
-En todos los ejemplos de este README, `ferromapas <comando>` equivale a `python3 -m ferromapas <comando>`. Hay que ejecutarlo desde la raíz del repo; desde otro directorio, el comando `ferromapas` instalado con `pip install -e .` es más cómodo.
+En todos los ejemplos de este README, `ferromapas-toolkit <comando>` equivale a `python3 -m ferromapas <comando>`. Hay que ejecutarlo desde la raíz del repo; desde otro directorio, el comando `ferromapas-toolkit` instalado con `pip install -e .` es más cómodo.
 
 ## Flujo de trabajo
 
 ```
-ferromapas build                     # genera dist/Ferromapas.kmz
+ferromapas-toolkit build # genera dist/Ferromapas.kmz
 # abrir en Google Earth, editar, "Guardar lugar como…" sobre el mismo archivo
-ferromapas split dist/Ferromapas.kmz
+ferromapas-toolkit split dist/Ferromapas.kmz
 git diff
 git commit
 ```
@@ -51,14 +51,14 @@ Regla: **una sola fuente por vez**. Siempre hay que hacer `build` antes de abrir
 La primera vez, partí del KMZ original:
 
 ```bash
-ferromapas split Ferromapas.kmz
+ferromapas-toolkit split Ferromapas.kmz
 ```
 
 El KMZ no se versiona (`*.kmz` y `dist/` están en `.gitignore`).
 
 ## Comandos
 
-### `ferromapas split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO] [--force]`
+### `ferromapas-toolkit split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO] [--force]`
 
 Convierte un `.kmz` o `.kml` en el árbol de `src/`. **Borra y regenera `src/`** por completo.
 
@@ -67,7 +67,7 @@ Convierte un `.kmz` o `.kml` en el árbol de `src/`. **Borra y regenera `src/`**
 - Imprime un resumen: cantidad de carpetas y geometrías, lo que se descartó y los avisos.
 - Falla, indicando la ruta de carpetas, si encuentra algo que no sabe leer (por ejemplo `NetworkLink`, `MultiGeometry` o un elemento desconocido). Es mejor fallar que perder datos sin enterarse.
 
-### `ferromapas build [--src DIR] [--folders ARCHIVO] [--config ARCHIVO] [-o SALIDA] [--version TEXTO] [--kml]`
+### `ferromapas-toolkit build [--src DIR] [--folders ARCHIVO] [--config ARCHIVO] [-o SALIDA] [--version TEXTO] [--kml]`
 
 Arma el KMZ a partir de `src/`, con los estilos de `folders.yaml`.
 
@@ -77,7 +77,7 @@ Arma el KMZ a partir de `src/`, con los estilos de `folders.yaml`.
 - El resultado es reproducible: la misma entrada da el mismo archivo, byte por byte.
 - Si hay archivos o directorios que no figuran en `children`, los agrega al final y muestra un aviso. Si algo que figura no existe, es un error.
 
-### `ferromapas validate [--src DIR] [--strict]`
+### `ferromapas-toolkit validate [--src DIR] [--strict]`
 
 Revisa `src/`.
 
@@ -93,7 +93,7 @@ Revisa `src/`.
 
 Sale con código 1 si hay errores, o si hay avisos y se usó `--strict`.
 
-### `ferromapas compare A B [--ignore-top-level]`
+### `ferromapas-toolkit compare A B [--ignore-top-level]`
 
 Compara dos fuentes. Cada una puede ser un `.kmz`, un `.kml` o un directorio `src`.
 
@@ -105,10 +105,10 @@ Imprime dos tipos de diferencias:
 No importa el orden, y las coordenadas se comparan con 6 decimales. Sale con código 1 si hay diferencias. Con `--ignore-top-level` ignora el nombre de la carpeta de primer nivel, que forma parte de la ruta de todo: sirve para comparar versiones que la renombraron (por ejemplo "Ferromapas 1.0.0" y "Ferromapas (en Edición)"). Sirve como diff semántico:
 
 ```bash
-ferromapas compare Ferromapas.kmz dist/Ferromapas.kmz   # "Sin diferencias."
+ferromapas-toolkit compare Ferromapas.kmz dist/Ferromapas.kmz   # "Sin diferencias."
 ```
 
-### `ferromapas tree [--src DIR] [--depth N] [--names]`
+### `ferromapas-toolkit tree [--src DIR] [--depth N] [--names]`
 
 Muestra cómo quedaron los archivos de `src/`, como el comando `tree`, en el orden de `children`. Cada `.kml` indica su cantidad de placemarks.
 
@@ -128,7 +128,7 @@ src/
         └── ferrocarril-trasandino-central-chileno.kml  (15 placemarks)
 ```
 
-### `ferromapas kmz2kml ENTRADA [-o SALIDA] [--force]` y `ferromapas kml2kmz ENTRADA [-o SALIDA] [--force]`
+### `ferromapas-toolkit kmz2kml ENTRADA [-o SALIDA] [--force]` y `ferromapas-toolkit kml2kmz ENTRADA [-o SALIDA] [--force]`
 
 Convierten un archivo entre `.kmz` y `.kml`. Es una conversión directa del archivo: **no pasa por el modelo**, así que se conserva todo el contenido (estilos, vistas, etc.).
 
@@ -136,7 +136,7 @@ Convierten un archivo entre `.kmz` y `.kml`. Es una conversión directa del arch
 - `kml2kmz` empaqueta el KML como `doc.kml`. El resultado es reproducible: la misma entrada da el mismo archivo.
 - Sin `-o`, la salida tiene el nombre de la entrada con la otra extensión. Si ya existe, se niega a pisarla salvo con `--force`.
 
-### `ferromapas fmt [--src DIR] [--config ARCHIVO] [--folders ARCHIVO]`
+### `ferromapas-toolkit fmt [--src DIR] [--config ARCHIVO] [--folders ARCHIVO]`
 
 Normaliza `src/` en el lugar: lo carga y lo vuelve a escribir. Útil después de editar `.kml` o `.yaml` a mano. A diferencia de `split`, conserva tus ediciones, así que no exige que `src/` esté limpio.
 
