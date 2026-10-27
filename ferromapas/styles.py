@@ -1,4 +1,4 @@
-"""styles.yaml -> <Style> de KML y asignación de estilos por prefijo de ruta."""
+"""folders.yaml -> <Style> de KML y asignación de estilos por prefijo de ruta."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 import yaml
 
 from ferromapas.model import Folder, Placemark
-from ferromapas.tree import _unique_slug
+from ferromapas.tree import _unique_slug, slugify
 
 DEFAULT_STYLE = {
     "color": "#757575",
@@ -22,13 +22,14 @@ STYLE_KEYS = set(DEFAULT_STYLE)
 
 
 class StylesError(Exception):
-    """styles.yaml inválido."""
+    """folders.yaml inválido."""
 
 
 @dataclass
 class Styles:
     default: dict = field(default_factory=lambda: dict(DEFAULT_STYLE))
     by_prefix: dict[str, dict] = field(default_factory=dict)  # ya combinados con default
+    depths: dict[str, int] = field(default_factory=dict)  # prefijo -> profundidad absoluta de directorios
 
     def prefix_for(self, slug_path: str) -> str | None:
         """Prefijo de estilo más largo que aplica a una ruta de slugs."""
@@ -46,18 +47,45 @@ def style_id(prefix: str | None) -> str:
 
 
 def load_styles(path: str | Path) -> Styles:
-    """Carga styles.yaml; si no existe, usa solo el estilo por defecto."""
+    """Carga folders.yaml; si no existe, usa solo el estilo por defecto."""
     path = Path(path)
     if not path.exists():
         return Styles()
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if "styles" in data:
+        raise StylesError(f"{path}: 'styles' ya no existe; usá un árbol de carpetas anidadas bajo 'folders'")
     default = {**DEFAULT_STYLE, **(data.get("default") or {})}
     _check_keys(default, f"{path}: default")
-    by_prefix = {}
-    for prefix, override in (data.get("styles") or {}).items():
-        _check_keys(override or {}, f"{path}: {prefix}")
-        by_prefix[str(prefix).strip("/")] = {**default, **(override or {})}
-    return Styles(default, by_prefix)
+    styles = Styles(default)
+    _load_folders(data.get("folders") or {}, [], styles, str(path))
+    return styles
+
+
+def _load_folders(nodes: dict, parents: list[str], styles: Styles, where: str) -> None:
+    """Recorre el árbol de carpetas; cada clave es el nombre (o slug) de una carpeta.
+
+    Un nodo puede tener `styles` (estilo para todo lo que está debajo) y `depth` (cuántos
+    niveles por debajo de esa carpeta se guardan como directorios). El resto de las claves
+    son subcarpetas.
+    """
+    if not isinstance(nodes, dict):
+        raise StylesError(f"{where}: se esperaba un mapa de carpetas")
+    for key, node in nodes.items():
+        path = [*parents, slugify(str(key))]
+        prefix = "/".join(path)
+        node = node or {}
+        if not isinstance(node, dict):
+            raise StylesError(f"{where}: {prefix}: se esperaba un mapa")
+        if "styles" in node:
+            override = node["styles"] or {}
+            _check_keys(override, f"{where}: {prefix}")
+            styles.by_prefix[prefix] = {**styles.default, **override}
+        if "depth" in node:
+            if not isinstance(node["depth"], int) or isinstance(node["depth"], bool) or node["depth"] < 0:
+                raise StylesError(f"{where}: {prefix}: depth debe ser un entero >= 0")
+            styles.depths[prefix] = len(path) + node["depth"]
+        children = {k: v for k, v in node.items() if k not in ("styles", "depth")}
+        _load_folders(children, path, styles, where)
 
 
 def _check_keys(style: dict, where: str) -> None:

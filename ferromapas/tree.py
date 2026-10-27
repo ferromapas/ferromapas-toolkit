@@ -37,6 +37,9 @@ def _represent_str(dumper: yaml.SafeDumper, value: str) -> yaml.ScalarNode:
 _Dumper.add_representer(str, _represent_str)
 
 
+TOP_FOLDER = "Ferromapas"
+
+
 def slugify(name: str) -> str:
     """Slug ASCII: 'Río Tercero - Córdoba' -> 'rio-tercero-cordoba'."""
     text = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
@@ -52,6 +55,24 @@ def _unique_slug(name: str, used: set[str]) -> str:
         n += 1
     used.add(slug)
     return slug
+
+
+def normalize_top_folder(root: Folder) -> None:
+    """Deja la carpeta principal solo como 'Ferromapas', sin versión ni otro texto (p. ej. '(en Edición)')."""
+    for child in root.children:
+        if isinstance(child, Folder) and child.name.casefold().startswith(TOP_FOLDER.casefold()):
+            child.name = TOP_FOLDER
+            child.slug = None
+
+
+def set_top_folder_version(root: Folder, version: str) -> None:
+    """Agrega la versión al nombre de la carpeta principal: 'Ferromapas (version)'.
+
+    El slug no cambia, así que los estilos por ruta siguen aplicando.
+    """
+    for child in root.children:
+        if isinstance(child, Folder) and child.name == TOP_FOLDER:
+            child.name = f"{TOP_FOLDER} ({version})"
 
 
 def _is_directory(folder: Folder, slug_path: str, depth: int, config: Config) -> bool:

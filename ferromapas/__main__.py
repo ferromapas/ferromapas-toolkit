@@ -6,11 +6,11 @@ from pathlib import Path
 
 from ferromapas.build import build_kml, write_kml, write_kmz
 from ferromapas.compare import compare, load_source
-from ferromapas.config import load_config
+from ferromapas.config import Config, load_config
 from ferromapas.convert import kml_to_kmz, kmz_to_kml
 from ferromapas.reader import ReadError, read
 from ferromapas.styles import StylesError, load_styles
-from ferromapas.tree import SplitError, TreeError, load_tree, split, tree_view
+from ferromapas.tree import SplitError, TreeError, load_tree, normalize_top_folder, set_top_folder_version, split, tree_view
 from ferromapas.validate import validate
 
 COMMANDS = {
@@ -25,11 +25,19 @@ COMMANDS = {
 }
 
 
+def _config_with_depths(args: argparse.Namespace) -> Config:
+    """Configuración con las profundidades que indica el árbol de folders.yaml (ganan sobre ferromapas.yaml)."""
+    config = load_config(args.config)
+    config.overrides.update(load_styles(args.folders).depths)
+    return config
+
+
 def _split(args: argparse.Namespace) -> int:
     try:
         root, report = read(args.input)
-        count = split(root, args.src, load_config(args.config), force=args.force)
-    except (ReadError, SplitError, OSError) as e:
+        normalize_top_folder(root)
+        count = split(root, args.src, _config_with_depths(args), force=args.force)
+    except (ReadError, SplitError, StylesError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     print(report.summary())
@@ -41,7 +49,9 @@ def _build(args: argparse.Namespace) -> int:
     try:
         config = load_config(args.config)
         root, warnings = load_tree(args.src)
-        kml = build_kml(root, load_styles(args.styles))
+        if args.version:
+            set_top_folder_version(root, args.version)
+        kml = build_kml(root, load_styles(args.folders))
         if args.kml:
             output = Path(args.output or config.output).with_suffix(".kml")
             write_kml(kml, output)
@@ -119,8 +129,9 @@ def _validate(args: argparse.Namespace) -> int:
 def _fmt(args: argparse.Namespace) -> int:
     try:
         root, warnings = load_tree(args.src)
-        count = split(root, args.src, load_config(args.config), force=True)
-    except (ReadError, TreeError, OSError) as e:
+        normalize_top_folder(root)
+        count = split(root, args.src, _config_with_depths(args), force=True)
+    except (ReadError, TreeError, StylesError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     for warning in warnings:
@@ -141,6 +152,7 @@ def create_parser() -> argparse.ArgumentParser:
             sub.add_argument("input", help="archivo .kmz o .kml de origen")
             sub.add_argument("--src", default="src", help="directorio de salida (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
+            sub.add_argument("--folders", default="folders.yaml", help="archivo de carpetas (estilos y profundidades)")
             sub.add_argument("--force", action="store_true", help="pisar src/ aunque tenga cambios sin commitear")
             sub.set_defaults(func=_split)
         if name == "compare":
@@ -169,12 +181,14 @@ def create_parser() -> argparse.ArgumentParser:
         if name == "fmt":
             sub.add_argument("--src", default="src", help="directorio a normalizar (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
+            sub.add_argument("--folders", default="folders.yaml", help="archivo de carpetas (estilos y profundidades)")
             sub.set_defaults(func=_fmt)
         if name == "build":
             sub.add_argument("--src", default="src", help="directorio de origen (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
-            sub.add_argument("--styles", default="styles.yaml", help="archivo de estilos")
+            sub.add_argument("--folders", default="folders.yaml", help="archivo de carpetas (estilos y profundidades)")
             sub.add_argument("-o", "--output", help="archivo de salida (por defecto: el de ferromapas.yaml)")
+            sub.add_argument("--version", help='texto de versión: la carpeta principal queda "Ferromapas (TEXTO)"')
             sub.add_argument("--kml", action="store_true", help="generar un KML plano en vez de un KMZ")
             sub.set_defaults(func=_build)
     return parser

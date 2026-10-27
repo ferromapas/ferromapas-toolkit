@@ -54,8 +54,8 @@ def test_load_tree_unlisted_and_missing(tmp_path):
 
 
 def test_build_styles_by_prefix(tmp_path):
-    styles_file = tmp_path / "styles.yaml"
-    styles_file.write_text('styles:\n  a/b: { color: "#FF0000" }\n')
+    styles_file = tmp_path / "folders.yaml"
+    styles_file.write_text('folders:\n  A:\n    B: { styles: { color: "#FF0000" } }\n')
     root = Folder("D", None, [pm("suelto"), Folder("A", None, [Folder("B", None, [pm("x")]), Folder("C", None, [pm("y")])])])
     kml = build_kml(root, load_styles(styles_file))
     assert kml.count("<Style ") == 2
@@ -87,7 +87,7 @@ def test_kmz_reproducible(tmp_path):
 
 def test_unknown_style_key(tmp_path):
     f = tmp_path / "s.yaml"
-    f.write_text("styles:\n  a: { colour: '#000000' }\n")
+    f.write_text("folders:\n  A: { styles: { colour: '#000000' } }\n")
     with pytest.raises(StylesError, match="colour"):
         load_styles(f)
 
@@ -96,8 +96,47 @@ def test_cli_build(tmp_path, capsys):
     src = tmp_path / "src"
     assert main(["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--force"]) == 0
     out = tmp_path / "out" / "m.kmz"
-    args = ["build", "--src", str(src), "--styles", str(tmp_path / "no.yaml"), "-o", str(out)]
+    args = ["build", "--src", str(src), "--folders", str(tmp_path / "no.yaml"), "-o", str(out)]
     assert main(args) == 0 and out.exists()
     assert main([*args, "--kml"]) == 0 and out.with_suffix(".kml").exists()
     assert main(["build", "--src", str(tmp_path / "vacio")]) == 1
     assert "_document.yaml" in capsys.readouterr().err
+
+
+def test_styles_tree_depths(tmp_path):
+    f = tmp_path / "s.yaml"
+    f.write_text(
+        "folders:\n"
+        "  Mapa:\n"
+        "    Argentina:\n"
+        "      Belgrano: { styles: { color: '#6A1B9A' }, depth: 2 }\n"
+        "    Chile: { styles: { color: '#000000' } }\n"
+    )
+    styles = load_styles(f)
+    assert styles.depths == {"mapa/argentina/belgrano": 5}
+    assert set(styles.by_prefix) == {"mapa/argentina/belgrano", "mapa/chile"}
+
+
+def test_old_flat_styles_rejected(tmp_path):
+    f = tmp_path / "s.yaml"
+    f.write_text("styles:\n  a: { color: '#000000' }\n")
+    with pytest.raises(StylesError, match="folders"):
+        load_styles(f)
+
+
+def test_split_uses_depths_from_styles(tmp_path):
+    f = tmp_path / "s.yaml"
+    f.write_text("folders:\n  Mapa:\n    Belgrano: { depth: 2 }\n")
+    src = tmp_path / "src"
+    args = ["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--folders", str(f), "--config", str(tmp_path / "no.yaml"), "--force"]
+    assert main(args) == 0
+
+
+def test_cli_build_version(tmp_path):
+    src = tmp_path / "src"
+    root = Folder("D", None, [Folder("Ferromapas", None, [pm("x")])])
+    split(root, src, Config(), force=True)
+    out = tmp_path / "m.kml"
+    args = ["build", "--src", str(src), "--folders", str(tmp_path / "no.yaml"), "--version", "v1", "--kml", "-o", str(out)]
+    assert main(args) == 0
+    assert "<name>Ferromapas (v1)</name>" in out.read_text(encoding="utf-8")

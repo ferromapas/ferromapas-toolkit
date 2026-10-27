@@ -58,7 +58,7 @@ El KMZ no se versiona (`*.kmz` y `dist/` están en `.gitignore`).
 
 ## Comandos
 
-### `ferromapas split ENTRADA [--src DIR] [--config ARCHIVO] [--force]`
+### `ferromapas split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO] [--force]`
 
 Convierte un `.kmz` o `.kml` en el árbol de `src/`. **Borra y regenera `src/`** por completo.
 
@@ -67,11 +67,12 @@ Convierte un `.kmz` o `.kml` en el árbol de `src/`. **Borra y regenera `src/`**
 - Imprime un resumen: cantidad de carpetas y geometrías, lo que se descartó y los avisos.
 - Falla, indicando la ruta de carpetas, si encuentra algo que no sabe leer (por ejemplo `NetworkLink`, `MultiGeometry` o un elemento desconocido). Es mejor fallar que perder datos sin enterarse.
 
-### `ferromapas build [--src DIR] [--styles ARCHIVO] [--config ARCHIVO] [-o SALIDA] [--kml]`
+### `ferromapas build [--src DIR] [--folders ARCHIVO] [--config ARCHIVO] [-o SALIDA] [--version TEXTO] [--kml]`
 
-Arma el KMZ a partir de `src/`, con los estilos de `styles.yaml`.
+Arma el KMZ a partir de `src/`, con los estilos de `folders.yaml`.
 
 - La salida por defecto es la de `ferromapas.yaml` (`dist/Ferromapas.kmz`).
+- `--version TEXTO` pone la versión en el nombre de la carpeta principal del mapa: `--version "en Edición"` da `Ferromapas (en Edición)`. Sin esta opción queda `Ferromapas`.
 - `--kml` genera un KML plano en lugar de un KMZ.
 - El resultado es reproducible: la misma entrada da el mismo archivo, byte por byte.
 - Si hay archivos o directorios que no figuran en `children`, los agrega al final y muestra un aviso. Si algo que figura no existe, es un error.
@@ -135,7 +136,7 @@ Convierten un archivo entre `.kmz` y `.kml`. Es una conversión directa del arch
 - `kml2kmz` empaqueta el KML como `doc.kml`. El resultado es reproducible: la misma entrada da el mismo archivo.
 - Sin `-o`, la salida tiene el nombre de la entrada con la otra extensión. Si ya existe, se niega a pisarla salvo con `--force`.
 
-### `ferromapas fmt [--src DIR] [--config ARCHIVO]`
+### `ferromapas fmt [--src DIR] [--config ARCHIVO] [--folders ARCHIVO]`
 
 Normaliza `src/` en el lugar: lo carga y lo vuelve a escribir. Útil después de editar `.kml` o `.yaml` a mano. A diferencia de `split`, conserva tus ediciones, así que no exige que `src/` esté limpio.
 
@@ -144,7 +145,7 @@ Normaliza `src/` en el lugar: lo carga y lo vuelve a escribir. Útil después de
 ```
 src/
 ├── _document.yaml
-└── ferromapas-en-edicion/
+└── ferromapas/
     ├── _folder.yaml
     └── ferrocarriles-argentinos/
         ├── _folder.yaml
@@ -182,21 +183,26 @@ Una entrada que termina en `/` es un directorio y una que termina en `.kml` es u
 ```yaml
 output: dist/Ferromapas.kmz
 split:
-  max_dir_depth: 4          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
-  overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 5
+  max_dir_depth: 4          # Document=0, "Ferromapas"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
 ```
 
-Una carpeta es directorio si su profundidad es menor o igual al máximo **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`. Si cambiás estos valores, volvé a correr `split` para reorganizar `src/`.
+Una carpeta es directorio si su profundidad es menor o igual al máximo **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`. La profundidad de una carpeta puntual se define con `depth` en `folders.yaml` (ver abajo). Si cambiás estos valores, volvé a correr `split` para reorganizar `src/`.
 
-### `styles.yaml`
+### `folders.yaml`
 
-Los estilos se aplican solo en el `build`, por prefijo de ruta de slugs, a todo lo que está debajo:
+Los estilos se aplican solo en el `build`. Las carpetas se anidan como en el mapa (por nombre o por slug) y cada nodo puede tener:
+
+- `styles`: estilo para todo lo que está debajo.
+- `depth`: cuántos niveles por debajo de esa carpeta se guardan como directorios. `split` y `fmt` lo usan y gana sobre `max_dir_depth`.
 
 ```yaml
 default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
-styles:
-  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-mitre: { color: "#C62828" }
+folders:
+  Ferromapas:
+    Ferrocarriles Argentinos:
+      Ferrocarril Belgrano: { styles: { color: "#6A1B9A" }, depth: 2 }   # baja un nivel más que Chile
+    Ferrocarriles de Chile:
+      styles: { color: "#C62828" }
 ```
 
 Los colores van como `#RRGGBB`. Las claves que no se indican se toman de `default`. Una clave desconocida es un error.

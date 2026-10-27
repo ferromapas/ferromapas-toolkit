@@ -164,3 +164,11 @@ def test_tree_view(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "mapa/  # Mapa" in out and "ramal.kml  (2 placemarks)  # Ramal" in out
     assert main(["tree", "--src", str(tmp_path / "nada")]) == 1
+
+
+def test_normalize_top_folder():
+    from ferromapas.tree import normalize_top_folder
+
+    root = Folder("Doc", None, [Folder("Ferromapas (en Edición)", None, []), Folder("Otra", None, [])])
+    normalize_top_folder(root)
+    assert [c.name for c in root.children] == ["Ferromapas", "Otra"]

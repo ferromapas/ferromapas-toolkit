@@ -14,7 +14,7 @@ from ferromapas.styles import load_styles
 from ferromapas.tree import load_tree, split
 
 FIXTURES = Path(__file__).parent / "fixtures"
-STYLES = Path(__file__).parent.parent / "styles.yaml"
+STYLES = Path(__file__).parent.parent / "folders.yaml"
 CONFIGS = [Config(), Config(max_dir_depth=1), Config(max_dir_depth=9), Config(overrides={"mini": 0})]
 
 

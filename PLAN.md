@@ -31,7 +31,7 @@ Solo esto:
 ### Idioma del código
 - Todos los **identificadores** (módulos, clases, funciones, variables, parámetros) van en **inglés**.
 - Siguen en español los mensajes de la CLI, los comentarios, los docstrings y los commits.
-- También van en inglés los nombres que forman parte de un formato o de la interfaz: claves de `ferromapas.yaml` y `styles.yaml`, flags de la CLI (`--strict`) y nombres de archivo del repo (`_loose.kml`).
+- También van en inglés los nombres que forman parte de un formato o de la interfaz: claves de `ferromapas.yaml` y `folders.yaml`, flags de la CLI (`--strict`) y nombres de archivo del repo (`_loose.kml`).
 
 ### Casos especiales del KMZ actual
 - **22 estaciones FEPSA** escritas con la sintaxis vieja de KML 2.1: elemento `<S_Estaciones_FEPSA_desde_FEPSA_DDS>` tipado por un `<Schema parent="Placemark">`. Hay que convertirlas a `Placemark`, descartar `latitud` y `longitud`, y agregar `Est` al final de la descripción como `Nombre FEPSA: <Est>`.
@@ -51,20 +51,20 @@ En `ferromapas.yaml`, en la raíz del repo:
 ```yaml
 output: dist/Ferromapas.kmz
 split:
-  max_dir_depth: 4          # Document=0, "Ferromapas (en Edición)"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
+  max_dir_depth: 4          # Document=0, "Ferromapas"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
   overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: 5   # Línea > Ramal > subcarpetas
-    ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-roca: 5       # Zona > tramo > subcarpetas (hasta reorganizar)
+    ferromapas/ferrocarriles-argentinos/ferrocarril-belgrano: 5   # Línea > Ramal > subcarpetas
+    ferromapas/ferrocarriles-argentinos/ferrocarril-roca: 5       # Zona > tramo > subcarpetas (hasta reorganizar)
 ```
 Regla: una carpeta es directorio si su profundidad es `<= max_dir_depth` **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`.
 
 ### Estilos (solo en el build)
-En `styles.yaml`, por prefijo de ruta. El estilo se aplica a todo lo que está debajo:
+En `folders.yaml`, por prefijo de ruta. El estilo se aplica a todo lo que está debajo:
 ```yaml
 default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
 styles:
-  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-belgrano: { color: "#6A1B9A" }
-  ferromapas-en-edicion/ferrocarriles-argentinos/ferrocarril-mitre:    { color: "#C62828" }
+  ferromapas/ferrocarriles-argentinos/ferrocarril-belgrano: { color: "#6A1B9A" }
+  ferromapas/ferrocarriles-argentinos/ferrocarril-mitre:    { color: "#C62828" }
   # ...
 ```
 - El build genera un `<Style>` por entrada, con LineStyle, IconStyle, LabelStyle y PolyStyle, en el `<Document>`.
@@ -89,7 +89,7 @@ ferromapas-toolkit/
 │   ├── reader.py            # KML (de Google Earth o del repo) -> modelo, con política de descarte
 │   ├── writer.py            # modelo -> KML normalizado (fragmento o documento con estilos)
 │   ├── tree.py              # modelo <-> src/ (directorios, _folder.yaml, .kml, _loose.kml)
-│   ├── styles.py            # styles.yaml -> <Style>, asignación por prefijo
+│   ├── styles.py            # folders.yaml -> <Style>, asignación por prefijo
 │   ├── validate.py
 │   └── compare.py
 ├── tests/
@@ -97,7 +97,7 @@ ferromapas-toolkit/
 │   └── test_*.py
 ├── src/                     # datos del mapa (los genera split)
 ├── ferromapas.yaml
-├── styles.yaml
+├── folders.yaml
 ├── pyproject.toml           # entry point: ferromapas = ferromapas.__main__:main
 ├── CLAUDE.md
 └── .github/workflows/ci.yml
