@@ -169,6 +169,7 @@ def test_tree_view(tmp_path, capsys):
 def test_normalize_top_folder():
     from ferromapas.tree import normalize_top_folder
 
-    root = Folder("Doc", None, [Folder("Ferromapas (en Edición)", None, []), Folder("Otra", None, [])])
+    root = Folder("Ferromapas (en Edición).kmz", None, [Folder("Ferromapas (en Edición)", None, []), Folder("Otra", None, [])])
     normalize_top_folder(root)
+    assert root.name == "Ferromapas"
     assert [c.name for c in root.children] == ["Ferromapas", "Otra"]

@@ -58,7 +58,9 @@ def _unique_slug(name: str, used: set[str]) -> str:
 
 
 def normalize_top_folder(root: Folder) -> None:
-    """Deja la carpeta principal solo como 'Ferromapas', sin versión ni otro texto (p. ej. '(en Edición)')."""
+    """Deja la carpeta principal (y el Document raíz) solo como 'Ferromapas', sin versión ni otro texto."""
+    if root.name.casefold().startswith(TOP_FOLDER.casefold()):
+        root.name = TOP_FOLDER
     for child in root.children:
         if isinstance(child, Folder) and child.name.casefold().startswith(TOP_FOLDER.casefold()):
             child.name = TOP_FOLDER
