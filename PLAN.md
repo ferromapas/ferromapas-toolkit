@@ -27,6 +27,15 @@ Solo esto:
 - `ExtendedData`, `SchemaData` y `Schema`
 - Dentro de las geometrías: `altitudeMode`, `gx:altitudeMode`, `tessellate`, `extrude`, `gx:drawOrder`
 - La altitud de las coordenadas
+- Los decimales de las coordenadas más allá del sexto (se **redondea**, no se trunca). Ver «Precisión de las coordenadas».
+
+### Precisión de las coordenadas
+Reducir las coordenadas a 6 decimales (el KMZ original llega a 14) es una pérdida de datos deliberada:
+- **Resolución**: 1e-6° ≈ 11,1 cm en latitud y ≈ 9,2 cm en longitud a ~34° S. El error máximo por eje al redondear es la mitad: **±5,5 cm** en latitud y **±4,6 cm** en longitud; el error típico total es de 3 a 4 cm.
+- **Por qué es aceptable**: los decimales descartados (de 1e-7 a 1e-14) representan escalas de centímetros a nanómetros, muy por debajo del ruido de un GPS o de un trazado manual en Google Earth.
+- **Consecuencia para los tests**: el KMZ reconstruido **no** es idéntico al original en coordenadas. `compare` y el test semántico deben redondear a 6 decimales las coordenadas de ambos lados antes de comparar (ver Fase 4).
+- **Idempotencia**: el redondeo se aplica una sola vez, al leer. Redondear de nuevo un valor ya redondeado no lo cambia, así que `build → split` no produce diferencias.
+- Si en el futuro hiciera falta más precisión, subir a 7 decimales (≈ 1 cm) es un cambio de una constante, pero reescribe todos los archivos de `src/`.
 
 ### Idioma del código
 - Todos los **identificadores** (módulos, clases, funciones, variables, parámetros) van en **inglés**.
@@ -147,7 +156,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 
 ### Fase 4 — Ida y vuelta (lo más importante)
 - **Test de idempotencia**: `split(mini) → src1 → build → split → src2`, y `src1 == src2` byte por byte.
-- **Test semántico**: el multiconjunto `(camino de carpetas, nombre, tipo, coordenadas)` es el mismo en el original y en el reconstruido.
+- **Test semántico**: el multiconjunto `(camino de carpetas, nombre, tipo, coordenadas)` es el mismo en el original y en el reconstruido, comparando las coordenadas ya redondeadas a 6 decimales.
 - `ferromapas-toolkit compare A B`: acepta `.kmz`, `.kml` o directorio `src`. Imprime los elementos que están solo en A o solo en B, y las carpetas agregadas o eliminadas. Sirve como diff semántico para los PR.
 - `ferromapas-toolkit fmt`: normaliza `src/` en el lugar (cargar y volver a escribir).
 - **Listo cuando**: con el KMZ real, `compare original.kmz dist/Ferromapas.kmz` no muestra diferencias, y el ciclo `build → split` no produce cambios en `git diff`.

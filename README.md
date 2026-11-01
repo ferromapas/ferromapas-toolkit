@@ -56,6 +56,17 @@ ferromapas-toolkit split Ferromapas.kmz
 
 El KMZ no se versiona (`*.kmz` y `dist/` están en `.gitignore`).
 
+### Precisión de las coordenadas
+
+Al hacer `split`, las coordenadas se **redondean a 6 decimales** (el KMZ original llega a 14) y se descarta la altitud. Es una pérdida de datos deliberada:
+
+- 1e-6° ≈ 11,1 cm en latitud y ≈ 9,2 cm en longitud a ~34° S. El error máximo al redondear es de **±5,5 cm** en latitud y **±4,6 cm** en longitud; el error típico total es de 3 a 4 cm.
+- Los decimales descartados representan escalas de centímetros a nanómetros, muy por debajo del ruido de un GPS o de un trazado manual en Google Earth.
+- El KMZ reconstruido no tiene las coordenadas idénticas al original. `compare` y los tests redondean ambos lados a 6 decimales antes de comparar.
+- El redondeo es idempotente: repetir `build → split` no produce cambios en `git diff`.
+
+Más detalles en [PLAN.md](PLAN.md).
+
 ## Comandos
 
 ### `ferromapas-toolkit split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO] [--force]`
