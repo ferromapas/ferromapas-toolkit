@@ -5,9 +5,9 @@ default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapf
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
-      Ferrocarril Belgrano:   { styles: { color: "#D30000" }, depth: 2 }  # Línea > Ramal > subcarpetas
+      Ferrocarril Belgrano:   { styles: { color: "#D30000" } }
       Ferrocarril Mitre:      { styles: { color: "#00FF00" } }
-      Ferrocarril Roca:       { styles: { color: "#FF00FF" }, depth: 2 }  # Zona > tramo > subcarpetas
+      Ferrocarril Roca:       { styles: { color: "#FF00FF" } }
       Ferrocarril San Martín: { styles: { color: "#0055FF" } }
       Ferrocarril Sarmiento:  { styles: { color: "#FFAAFF" } }
       Ferrocarril Urquiza:    { styles: { color: "#55FFFF" } }
