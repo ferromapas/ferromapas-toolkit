@@ -6,7 +6,7 @@ from ferromapas.__main__ import main
 from ferromapas.config import Config
 from ferromapas.model import Folder, LineString, Placemark, Point
 from ferromapas.reader import read, read_bytes
-from ferromapas.tree import SplitError, render_tree, slugify, split
+from ferromapas.tree import SplitError, load_tree, render_tree, slugify, split
 from ferromapas.writer import folder_document, format_coord
 from pathlib import Path
 
@@ -82,7 +82,7 @@ def test_render_tree_layout():
     config = Config(max_dir_depth=2, overrides={"mapa/ferrocarril-b": 3})
     files = render_tree(sample_tree(), config)
     assert sorted(files) == [
-        "_document.yaml", "_loose.kml", "mapa/_folder.yaml",
+        "_document.yaml", "_loose-2.kml", "_loose.kml", "mapa/_folder.yaml",
         "mapa/ferrocarril-a/_folder.yaml",
         "mapa/ferrocarril-a/rio-tercero-cordoba-2.kml",
         "mapa/ferrocarril-a/rio-tercero-cordoba.kml",
@@ -91,11 +91,12 @@ def test_render_tree_layout():
         "mapa/ferrocarril-b/linea/_folder.yaml",
         "mapa/ferrocarril-b/linea/ramal.kml",
     ]  # fmt: skip
-    assert files["_document.yaml"] == "name: Doc\nchildren:\n- _loose.kml\n- mapa/\n"
+    assert files["_document.yaml"] == "name: Doc\nchildren:\n- _loose.kml\n- mapa/\n- _loose-2.kml\n"
     assert files["mapa/_folder.yaml"] == (
         "name: Mapa\ndescription: |-\n  Descripción\n  multilínea\nchildren:\n- ferrocarril-a/\n- ferrocarril-b/\n"
     )
-    assert "suelto 2" in files["_loose.kml"] and "suelto 1" in files["_loose.kml"]
+    assert "suelto 1" in files["_loose.kml"] and "suelto 2" not in files["_loose.kml"]
+    assert "suelto 2" in files["_loose-2.kml"]
 
 
 def test_extras_preserved(tmp_path):
@@ -173,3 +174,19 @@ def test_normalize_top_folder():
     normalize_top_folder(root)
     assert root.name == "Ferromapas"
     assert [c.name for c in root.children] == ["Ferromapas", "Otra"]
+
+
+def test_loose_batches_keep_order(tmp_path):
+    """Los sueltos antes y después de las carpetas conservan su posición."""
+    root = Folder("Doc", None, [
+        pm("a"), pm("b"), Folder("F", None, [Folder("G", None, [pm("x")])]), pm("c"),
+    ])  # fmt: skip
+    config = Config(max_dir_depth=3)
+    files = render_tree(root, config)
+    assert files["_document.yaml"] == "name: Doc\nchildren:\n- _loose.kml\n- f/\n- _loose-2.kml\n"
+    for name, content in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    loaded, _ = load_tree(tmp_path)
+    assert [c.name for c in loaded.children] == ["a", "b", "F", "c"]

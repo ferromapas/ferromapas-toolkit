@@ -31,11 +31,11 @@ def test_load_tree_round_trip(tmp_path):
     split(root, src, Config(), force=True)
     loaded, warnings = load_tree(src)
     assert warnings == []
-    # los sueltos se juntan en el lugar del primero
+    # el orden original se conserva
     assert [c.name for c in loaded.children] == [
-        "Suelto inicial", "Suelto entre carpetas", "Ferrocarril X", "Vacía",
+        "Suelto inicial", "Ferrocarril X", "Suelto entre carpetas", "Vacía",
     ]  # fmt: skip
-    assert loaded.slug == "" and loaded.children[2].slug == "ferrocarril-x"
+    assert loaded.slug == "" and loaded.children[1].slug == "ferrocarril-x"
 
 
 def test_load_tree_unlisted_and_missing(tmp_path):

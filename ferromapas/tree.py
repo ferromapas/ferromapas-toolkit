@@ -14,6 +14,16 @@ from ferromapas.reader import read
 from ferromapas.writer import folder_document
 
 LOOSE = "_loose.kml"
+_LOOSE_RE = re.compile(r"_loose(-\d+)?\.kml")
+
+
+def _loose_name(n: int) -> str:
+    """Nombre del n-ésimo archivo de sueltos: _loose.kml, _loose-2.kml, ..."""
+    return LOOSE if n == 1 else f"_loose-{n}.kml"
+
+
+def _is_loose(entry: str) -> bool:
+    return _LOOSE_RE.fullmatch(entry) is not None
 FOLDER_YAML = "_folder.yaml"
 DOCUMENT_YAML = "_document.yaml"
 KNOWN_KEYS = ("name", "description", "children")
@@ -106,13 +116,23 @@ def _render_directory(
 ) -> None:
     used: set[str] = set()
     entries: list[str] = []
-    loose: list[Placemark] = []
+    loose: list[Placemark] = []  # tanda actual de placemarks contiguos
+    batches = 0
+
+    def flush() -> None:
+        nonlocal batches
+        if loose:
+            batches += 1
+            name = _loose_name(batches)
+            entries.append(name)
+            files[f"{rel_dir}{name}"] = folder_document(Folder(folder.name, None, list(loose)))
+            loose.clear()
+
     for child in folder.children:
         if isinstance(child, Placemark):
-            if not loose:
-                entries.append(LOOSE)  # todos los sueltos van juntos, en el lugar del primero
             loose.append(child)
             continue
+        flush()  # cada tanda de sueltos contiguos va a su archivo, en su lugar
         slug = _unique_slug(child.name, used)
         child_path = f"{slug_path}/{slug}" if slug_path else slug
         if _is_directory(child, child_path, depth + 1, config):
@@ -121,8 +141,7 @@ def _render_directory(
         else:
             entries.append(f"{slug}.kml")
             files[f"{rel_dir}{slug}.kml"] = folder_document(child)
-    if loose:
-        files[f"{rel_dir}{LOOSE}"] = folder_document(Folder(folder.name, None, list(loose)))
+    flush()
 
     meta: dict = {"name": folder.name}
     if folder.description:
@@ -239,7 +258,7 @@ def _load_directory(directory: Path, yaml_name: str, slug: str, warnings: list[s
             if not path.is_file():
                 raise TreeError(f"{yaml_path}: no existe el archivo {entry}")
             kml_folder, _ = read(path)
-            if entry == LOOSE:
+            if _is_loose(entry):
                 folder.children.extend(kml_folder.children)
             else:
                 kml_folder.slug = entry.removesuffix(".kml")
@@ -292,6 +311,6 @@ def _view_directory(
             folder, _ = read(path)
             count = _count_placemarks(folder)
             label = f"{prefix}{branch}{entry}  ({count} placemarks)"
-            if names and entry != LOOSE:
+            if names and not _is_loose(entry):
                 label += f"  # {folder.name}"
             lines.append(label)

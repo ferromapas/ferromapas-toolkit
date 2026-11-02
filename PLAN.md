@@ -8,7 +8,7 @@ Convierte el KMZ que se edita en Google Earth en un árbol de archivos de texto 
 ### Formato en el repo
 - **Carpetas superiores** (desde la raíz hasta el nivel de ramal): cada una es un **directorio** con un `_folder.yaml`.
 - **Ramal hacia abajo**: un único **archivo `.kml`** por ramal. Las subcarpetas internas se guardan como `<Folder>` anidados (por ejemplo "Desvío Ingenio Ledesma" dentro de C15).
-- **Placemarks sueltos** en una carpeta que es directorio van en `_loose.kml`, dentro de ese mismo directorio.
+- **Placemarks sueltos** en una carpeta que es directorio van en `_loose.kml`, dentro de ese mismo directorio. Cada tanda de placemarks contiguos va a su propio archivo (`_loose.kml`, `_loose-2.kml`, ...), listado en `children` en su posición, para conservar el orden.
 - La raíz del `Document` tiene su propio `_document.yaml`.
 - El orden de los hijos se guarda en `children` dentro del yaml. Los nombres de archivo no determinan el orden.
 - **Nombres de archivo**: slug ASCII (`ramal-a1-cruz-del-eje-alta-cordoba.kml`). El nombre real queda en `<name>` o en el yaml. Si dos hermanos dan el mismo slug, se agrega `-2`, `-3`.

@@ -168,7 +168,7 @@ src/
 
 - Las carpetas superiores son directorios con un `_folder.yaml`. La raíz del `Document` tiene `_document.yaml`.
 - Desde el ramal hacia abajo, cada carpeta es un único `.kml`. Las subcarpetas internas quedan como `<Folder>` anidados.
-- Los placemarks sueltos de un directorio van juntos en `_loose.kml`.
+- Los placemarks sueltos de un directorio van en `_loose.kml`. Si hay sueltos antes y después de las subcarpetas, cada tanda contigua va a su propio archivo (`_loose.kml`, `_loose-2.kml`, ...), para conservar el orden.
 - El orden de los hijos se guarda en `children` dentro del yaml, no en los nombres de archivo.
 - Los nombres de archivo son slugs ASCII (`rio-tercero-cordoba.kml`). Si dos hermanos dan el mismo slug, se agrega `-2`, `-3`. El nombre real queda en el `<name>` o en el yaml.
 - Cada `.kml` es un KML válido por sí mismo: se puede abrir solo en Google Earth.
