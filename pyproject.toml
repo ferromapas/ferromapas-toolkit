@@ -7,10 +7,10 @@ name = "ferromapas"
 version = "0.1.0"
 description = "Convierte el KMZ de Ferromapas (Google Earth) <-> árbol de archivos en src/"
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6.0"]
+dependencies = ["PyYAML==6.0.3"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest==9.1.1"]
 
 [project.scripts]
 ferromapas-toolkit = "ferromapas.__main__:main"
