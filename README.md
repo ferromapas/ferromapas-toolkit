@@ -16,7 +16,7 @@ pip install -e .[dev]
 pytest                      # opcional: corre los tests
 ```
 
-Esto instala el comando `ferromapas`.
+Esto instala el comando `ferromapas-toolkit`.
 
 ### Sin instalar el paquete
 
@@ -197,7 +197,7 @@ split:
   max_dir_depth: 4          # Document=0, "Ferromapas"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
 ```
 
-Una carpeta es directorio si su profundidad es menor o igual al máximo **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`. La profundidad de una carpeta puntual se define con `depth` en `folders.yaml` (ver abajo). Si cambiás estos valores, volvé a correr `split` para reorganizar `src/`.
+Una carpeta es directorio si su profundidad es menor o igual al máximo **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`. Si `max_dir_depth` (o el archivo entero) falta, el valor por defecto es 3. La profundidad de una carpeta puntual se define con `depth` en `folders.yaml` (ver abajo). Si cambiás estos valores, volvé a correr `split` para reorganizar `src/`.
 
 ### `folders.yaml`
 

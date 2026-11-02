@@ -61,22 +61,26 @@ En `ferromapas.yaml`, en la raíz del repo:
 output: dist/Ferromapas.kmz
 split:
   max_dir_depth: 4          # Document=0, "Ferromapas"=1, "Ferrocarriles Argentinos"=2, "Ferrocarril X"=3, Línea/Zona/tramo=4
-  overrides:                # por prefijo de ruta (slugs); gana el prefijo más largo
-    ferromapas/ferrocarriles-argentinos/ferrocarril-belgrano: 5   # Línea > Ramal > subcarpetas
-    ferromapas/ferrocarriles-argentinos/ferrocarril-roca: 5       # Zona > tramo > subcarpetas (hasta reorganizar)
 ```
+Si falta `max_dir_depth` (o el archivo), el valor por defecto es 3.
+
 Regla: una carpeta es directorio si su profundidad es `<= max_dir_depth` **y además** tiene subcarpetas. En cualquier otro caso es un archivo `.kml`.
 
-### Estilos (solo en el build)
-En `folders.yaml`, por prefijo de ruta. El estilo se aplica a todo lo que está debajo:
+Una carpeta puntual se puede cortar distinto con `depth` en `folders.yaml` (ver abajo): indica cuántos niveles por debajo de esa carpeta se guardan como directorios, y gana sobre `max_dir_depth` para todo lo que cuelga de ella (gana el prefijo más largo).
+
+### Estilos y profundidades (`folders.yaml`)
+Las carpetas se anidan como en el mapa (por nombre o por slug). Cada nodo puede tener `styles` (estilo para todo lo que está debajo), `depth` (ver arriba) e `id` (nombre corto del `<Style>` generado; requiere `styles`). Los estilos solo se aplican en el build.
 ```yaml
 default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
-styles:
-  ferromapas/ferrocarriles-argentinos/ferrocarril-belgrano: { color: "#6A1B9A" }
-  ferromapas/ferrocarriles-argentinos/ferrocarril-mitre:    { color: "#C62828" }
-  # ...
+folders:
+  Ferromapas:
+    Ferrocarriles Argentinos:
+      Ferrocarril Belgrano: { styles: { color: "#6A1B9A" }, id: belgrano, depth: 2 }
+      Ferrocarril Mitre:    { styles: { color: "#C62828" }, id: mitre }
+      # ...
 ```
-- El build genera un `<Style>` por entrada, con LineStyle, IconStyle, LabelStyle y PolyStyle, en el `<Document>`.
+- El build genera un `<Style>` por entrada con `styles`, con LineStyle, IconStyle, LabelStyle y PolyStyle, en el `<Document>`. Sin `id`, el nombre se deriva de la ruta (`s-ferromapas--ferrocarriles-argentinos--ferrocarril-belgrano`).
+- Las claves de `styles` que no se indican se toman de `default`. Una clave desconocida es un error.
 - Cada Placemark recibe el `styleUrl` correspondiente y cada `LineString` lleva `tessellate=1`.
 - Hay que convertir los colores de `#RRGGBB` a `aabbggrr`, el formato de KML.
 
@@ -93,12 +97,15 @@ La alternativa razonable es **TypeScript/Node**. Conviene si pensás hacer un vi
 ```
 ferromapas-toolkit/
 ├── ferromapas/              # paquete Python
-│   ├── __main__.py          # CLI (argparse): split | build | validate | compare | fmt
+│   ├── __main__.py          # CLI (argparse): split | build | validate | compare | tree | kmz2kml | kml2kmz | fmt
 │   ├── model.py             # Folder, Placemark, Geometry
 │   ├── reader.py            # KML (de Google Earth o del repo) -> modelo, con política de descarte
 │   ├── writer.py            # modelo -> KML normalizado (fragmento o documento con estilos)
 │   ├── tree.py              # modelo <-> src/ (directorios, _folder.yaml, .kml, _loose.kml)
-│   ├── styles.py            # folders.yaml -> <Style>, asignación por prefijo
+│   ├── config.py            # ferromapas.yaml (salida y profundidad máxima)
+│   ├── styles.py            # folders.yaml -> <Style>, asignación por prefijo, depth e id
+│   ├── build.py             # src/ -> KMZ/KML con estilos
+│   ├── convert.py           # kmz2kml / kml2kmz sin pasar por el modelo
 │   ├── validate.py
 │   └── compare.py
 ├── tests/
@@ -109,7 +116,7 @@ ferromapas-toolkit/
 ├── folders.yaml
 ├── pyproject.toml           # entry point: ferromapas = ferromapas.__main__:main
 ├── CLAUDE.md
-└── .github/workflows/ci.yml
+└── .github/workflows/ci.yml  # pendiente (Fase 6)
 ```
 
 ## 4. Fases
