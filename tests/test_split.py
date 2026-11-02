@@ -1,5 +1,3 @@
-import subprocess
-
 import pytest
 
 from ferromapas.__main__ import main
@@ -102,34 +100,24 @@ def test_render_tree_layout():
 def test_extras_preserved(tmp_path):
     src = tmp_path / "src"
     (src / "mapa").mkdir(parents=True)
+    (src / "_document.yaml").write_text("name: Doc\n")
     (src / "mapa" / "_folder.yaml").write_text("name: Mapa\ncode: M1\nchildren: []\n")
     root = Folder("Doc", None, [Folder("Mapa", None, [Folder("X", None, [pm("p")])])])
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     assert (src / "mapa" / "_folder.yaml").read_text().endswith("code: M1\n")
 
 
 def test_split_replaces_src_and_is_stable(tmp_path):
     src = tmp_path / "src"
     src.mkdir()
+    (src / "_document.yaml").write_text("name: Doc\n")
     (src / "viejo.txt").write_text("x")
     root, _ = read(FIXTURES / "mini.kml")
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     first = {p: p.read_bytes() for p in src.rglob("*") if p.is_file()}
     assert not (src / "viejo.txt").exists() and first
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     assert first == {p: p.read_bytes() for p in src.rglob("*") if p.is_file()}
-
-
-def test_refuses_dirty_src(tmp_path):
-    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)  # noqa: E731
-    git("init", "-q")
-    src = tmp_path / "src"
-    src.mkdir()
-    (src / "a.txt").write_text("x")
-    with pytest.raises(SplitError, match="sin commitear"):
-        split(Folder("D"), src, Config())
-    split(Folder("D"), src, Config(), force=True)
-    assert (src / "_document.yaml").exists()
 
 
 def test_cli_split(tmp_path, capsys):
@@ -150,7 +138,7 @@ def test_cli_split_read_error(tmp_path, capsys):
 def test_tree_view(tmp_path, capsys):
     root = Folder("Doc", None, [pm("suelto"), Folder("Mapa", None, [Folder("Ramal", None, [pm("a"), pm("b")])])])
     src = tmp_path / "src"
-    split(root, src, Config(max_dir_depth=1), force=True)
+    split(root, src, Config(max_dir_depth=1))
     assert main(["tree", "--src", str(src)]) == 0
     out = capsys.readouterr().out.splitlines()
     assert out == [
@@ -190,3 +178,27 @@ def test_loose_batches_keep_order(tmp_path):
         path.write_text(content, encoding="utf-8")
     loaded, _ = load_tree(tmp_path)
     assert [c.name for c in loaded.children] == ["a", "b", "F", "c"]
+
+
+def test_split_refuses_to_delete_foreign_directory(tmp_path):
+    src = tmp_path / "documentos"
+    src.mkdir()
+    (src / "importante.txt").write_text("no borrar", encoding="utf-8")
+    with pytest.raises(SplitError, match="no parece un src/"):
+        split(Folder("D"), src, Config())
+    assert (src / "importante.txt").read_text(encoding="utf-8") == "no borrar"
+
+
+def test_split_refuses_when_src_is_a_file(tmp_path):
+    src = tmp_path / "src"
+    src.write_text("x", encoding="utf-8")
+    with pytest.raises(SplitError, match="no es un directorio"):
+        split(Folder("D"), src, Config())
+
+
+def test_split_accepts_empty_or_existing_toolkit_src(tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+    split(Folder("D"), src, Config())  # vacío
+    assert (src / "_document.yaml").is_file()
+    split(Folder("D"), src, Config())  # ya es un src/ del toolkit

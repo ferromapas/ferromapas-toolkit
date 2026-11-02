@@ -2,7 +2,6 @@
 
 import re
 import shutil
-import subprocess
 import unicodedata
 from pathlib import Path
 
@@ -169,27 +168,26 @@ def read_extras(src: Path) -> dict[str, dict]:
     return extras
 
 
-def _check_clean(src: Path) -> None:
-    """Se niega a seguir si hay cambios sin commitear en src/ (ver --force)."""
-    cwd = src.parent if src.parent.is_dir() else Path.cwd()
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain", "--", src.name],
-            cwd=cwd, capture_output=True, text=True,
-        )  # fmt: skip
-    except FileNotFoundError:
+def _check_replaceable(src: Path) -> None:
+    """Se niega a borrar un directorio que no parezca un src/ del toolkit.
+
+    Evita que un --src equivocado (por ejemplo el home) termine borrado por el rmtree.
+    """
+    if not src.exists():
         return
-    if result.returncode == 0 and result.stdout.strip():
+    if not src.is_dir():
+        raise SplitError(f"{src} existe y no es un directorio")
+    if any(src.iterdir()) and not (src / DOCUMENT_YAML).is_file():
         raise SplitError(
-            f"hay cambios sin commitear en {src}; hacé commit o usá --force:\n{result.stdout.rstrip()}"
+            f"{src} no parece un src/ del toolkit (falta {DOCUMENT_YAML}); "
+            "no se borra. Revisá --src o vaciá el directorio."
         )
 
 
-def split(root: Folder, src: str | Path, config: Config, force: bool = False) -> int:
+def split(root: Folder, src: str | Path, config: Config) -> int:
     """Borra y regenera src/. Devuelve la cantidad de archivos escritos."""
     src = Path(src)
-    if not force:
-        _check_clean(src)
+    _check_replaceable(src)
     files = render_tree(root, config, read_extras(src))
     if src.exists():
         shutil.rmtree(src)

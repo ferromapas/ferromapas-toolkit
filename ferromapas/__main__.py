@@ -39,7 +39,7 @@ def _split(args: argparse.Namespace) -> int:
     try:
         root, report = read(args.input)
         normalize_top_folder(root)
-        count = split(root, args.src, _config_with_depths(args), force=args.force)
+        count = split(root, args.src, _config_with_depths(args))
     except (ReadError, SplitError, StylesError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -145,7 +145,7 @@ def _fmt(args: argparse.Namespace) -> int:
     try:
         root, warnings = load_tree(args.src)
         normalize_top_folder(root)
-        count = split(root, args.src, _config_with_depths(args), force=True)
+        count = split(root, args.src, _config_with_depths(args))
     except (ReadError, TreeError, StylesError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -168,7 +168,6 @@ def create_parser() -> argparse.ArgumentParser:
             sub.add_argument("--src", default="src", help="directorio de salida (por defecto: src)")
             sub.add_argument("--config", default="ferromapas.yaml", help="archivo de configuración")
             sub.add_argument("--folders", default="folders.yaml", help="archivo de carpetas (estilos y profundidades)")
-            sub.add_argument("--force", action="store_true", help="pisar src/ aunque tenga cambios sin commitear")
             sub.set_defaults(func=_split)
         if name == "compare":
             sub.add_argument("a", help=".kmz, .kml o directorio src")

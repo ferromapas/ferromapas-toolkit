@@ -1,6 +1,6 @@
 # Ferromapas toolkit
 
-Herramienta de línea de comandos para versionar en git el mapa ferroviario de Ferromapas.
+Herramienta de línea de comandos para trabajar con el mapa ferroviario de Ferromapas.
 Convierte el KMZ que se edita en Google Earth en un árbol de archivos de texto (`src/`) y vuelve a armar el KMZ a partir de ese árbol.
 
 Las decisiones de formato están en [PLAN.md](PLAN.md).
@@ -42,11 +42,9 @@ En todos los ejemplos de este README, `ferromapas-toolkit <comando>` equivale a 
 ferromapas-toolkit build # genera dist/Ferromapas.kmz
 # abrir en Google Earth, editar, "Guardar lugar como…" sobre el mismo archivo
 ferromapas-toolkit split dist/Ferromapas.kmz
-git diff
-git commit
 ```
 
-Regla: **una sola fuente por vez**. Siempre hay que hacer `build` antes de abrir en Google Earth. Si editás un `.kml` a mano, hacé commit antes del próximo `split`.
+Regla: **una sola fuente por vez**. Siempre hay que hacer `build` antes de abrir en Google Earth. Si editás un `.kml` de `src/` a mano, hacé `build` antes del próximo `split`: `split` borra y regenera `src/` sin avisar, y las ediciones que no pasaron a un KMZ se pierden.
 
 La primera vez, partí del KMZ original:
 
@@ -54,7 +52,7 @@ La primera vez, partí del KMZ original:
 ferromapas-toolkit split Ferromapas.kmz
 ```
 
-El KMZ no se versiona (`*.kmz` y `dist/` están en `.gitignore`).
+Ni el KMZ ni `src/` se versionan en este repo (`*.kmz`, `dist/` y `src/` están en `.gitignore`).
 
 ### Precisión de las coordenadas
 
@@ -63,17 +61,18 @@ Al hacer `split`, las coordenadas se **redondean a 6 decimales** (el KMZ origina
 - 1e-6° ≈ 11,1 cm en latitud y ≈ 9,2 cm en longitud a ~34° S. El error máximo al redondear es de **±5,5 cm** en latitud y **±4,6 cm** en longitud; el error típico total es de 3 a 4 cm.
 - Los decimales descartados representan escalas de centímetros a nanómetros, muy por debajo del ruido de un GPS o de un trazado manual en Google Earth.
 - El KMZ reconstruido no tiene las coordenadas idénticas al original. `compare` y los tests redondean ambos lados a 6 decimales antes de comparar.
-- El redondeo es idempotente: repetir `build → split` no produce cambios en `git diff`.
+- El redondeo es idempotente: repetir `build → split` deja `src/` idéntico, byte por byte.
 
 Más detalles en [PLAN.md](PLAN.md).
 
 ## Comandos
 
-### `ferromapas-toolkit split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO] [--force]`
+### `ferromapas-toolkit split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO]`
 
 Convierte un `.kmz` o `.kml` en el árbol de `src/`. **Borra y regenera `src/`** por completo.
 
-- Se niega a correr si hay cambios sin commitear en `src/`. Con `--force` los pisa.
+- No protege las ediciones a mano de `src/`: las pisa sin avisar.
+- Sólo reemplaza un directorio que no exista, esté vacío o ya sea un `src/` del toolkit (con `_document.yaml`). Con otro `--src` falla y no borra nada.
 - Conserva las claves extra que hayas agregado a los `_folder.yaml` y `_document.yaml` (por ejemplo `code`).
 - Imprime un resumen: cantidad de carpetas y geometrías, lo que se descartó y los avisos.
 - Falla, indicando la ruta de carpetas, si encuentra algo que no sabe leer (por ejemplo `NetworkLink`, `MultiGeometry` o un elemento desconocido). Es mejor fallar que perder datos sin enterarse.

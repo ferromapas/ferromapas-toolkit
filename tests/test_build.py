@@ -28,7 +28,7 @@ def test_kml_color():
 def test_load_tree_round_trip(tmp_path):
     root, _ = read(FIXTURES / "mini.kml")
     src = tmp_path / "src"
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     loaded, warnings = load_tree(src)
     assert warnings == []
     # el orden original se conserva
@@ -41,7 +41,7 @@ def test_load_tree_round_trip(tmp_path):
 def test_load_tree_unlisted_and_missing(tmp_path):
     root = Folder("D", None, [Folder("A", None, [Folder("B", None, [pm("p")])])])
     src = tmp_path / "src"
-    split(root, src, Config(max_dir_depth=1), force=True)
+    split(root, src, Config(max_dir_depth=1))
     # archivo no listado: se agrega con aviso
     (src / "a" / "nuevo.kml").write_text((src / "a" / "b.kml").read_text())
     loaded, warnings = load_tree(src)
@@ -94,7 +94,7 @@ def test_unknown_style_key(tmp_path):
 
 def test_cli_build(tmp_path, capsys):
     src = tmp_path / "src"
-    assert main(["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--force"]) == 0
+    assert main(["split", str(FIXTURES / "mini.kml"), "--src", str(src)]) == 0
     out = tmp_path / "out" / "m.kmz"
     args = ["build", "--src", str(src), "--folders", str(tmp_path / "no.yaml"), "-o", str(out)]
     assert main(args) == 0 and out.exists()
@@ -128,14 +128,14 @@ def test_split_uses_depths_from_styles(tmp_path):
     f = tmp_path / "s.yaml"
     f.write_text("folders:\n  Mapa:\n    Belgrano: { depth: 2 }\n")
     src = tmp_path / "src"
-    args = ["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--folders", str(f), "--config", str(tmp_path / "no.yaml"), "--force"]
+    args = ["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--folders", str(f), "--config", str(tmp_path / "no.yaml")]
     assert main(args) == 0
 
 
 def test_cli_build_version(tmp_path):
     src = tmp_path / "src"
     root = Folder("D", None, [Folder("Ferromapas", None, [pm("x")])])
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     out = tmp_path / "m.kml"
     args = ["build", "--src", str(src), "--folders", str(tmp_path / "no.yaml"), "--version", "v1", "--kml", "-o", str(out)]
     assert main(args) == 0

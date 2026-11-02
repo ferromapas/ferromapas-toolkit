@@ -12,7 +12,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 def make_src(tmp_path, root):
     src = tmp_path / "src"
-    split(root, src, Config(max_dir_depth=1), force=True)
+    split(root, src, Config(max_dir_depth=1))
     return src
 
 

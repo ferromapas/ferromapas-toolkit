@@ -27,10 +27,10 @@ def snapshot(src: Path) -> dict[str, bytes]:
 def test_idempotent(tmp_path, fixture, config):
     root, _ = read(FIXTURES / fixture)
     src1, src2 = tmp_path / "src1", tmp_path / "src2"
-    split(root, src1, config, force=True)
+    split(root, src1, config)
     kmz = tmp_path / "out.kmz"
     write_kmz(build_kml(load_tree(src1)[0], load_styles(STYLES)), kmz)
-    split(read(kmz)[0], src2, config, force=True)
+    split(read(kmz)[0], src2, config)
     assert snapshot(src1) == snapshot(src2)
     assert snapshot(src1)
 
@@ -39,7 +39,7 @@ def test_idempotent(tmp_path, fixture, config):
 def test_semantic_equality(tmp_path, fixture):
     root, _ = read(FIXTURES / fixture)
     src = tmp_path / "src"
-    split(root, src, Config(), force=True)
+    split(root, src, Config())
     kmz = tmp_path / "out.kmz"
     write_kmz(build_kml(load_tree(src)[0], load_styles(STYLES)), kmz)
     assert not compare(root, read(kmz)[0])
@@ -71,7 +71,7 @@ def test_compare_ignores_order_and_precision():
 def test_cli_compare(tmp_path, capsys):
     src = tmp_path / "src"
     mini = str(FIXTURES / "mini.kml")
-    assert main(["split", mini, "--src", str(src), "--force"]) == 0
+    assert main(["split", mini, "--src", str(src)]) == 0
     assert main(["compare", mini, str(src)]) == 0
     assert "Sin diferencias" in capsys.readouterr().out
     assert main(["compare", mini, str(FIXTURES / "mini21.kml")]) == 1
@@ -80,7 +80,7 @@ def test_cli_compare(tmp_path, capsys):
 
 def test_fmt_normalizes_in_place(tmp_path, capsys):
     src = tmp_path / "src"
-    assert main(["split", str(FIXTURES / "mini.kml"), "--src", str(src), "--force"]) == 0
+    assert main(["split", str(FIXTURES / "mini.kml"), "--src", str(src)]) == 0
     expected = snapshot(src)
     # desnormalizar: reindentar un .kml y agregar un archivo sin listar
     target = next(p for p in src.rglob("*.kml") if p.name != "_loose.kml")

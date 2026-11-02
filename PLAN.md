@@ -1,6 +1,6 @@
 # Ferromapas toolkit — Plan de implementación
 
-Herramienta de línea de comandos para versionar en git el mapa ferroviario de Ferromapas.
+Herramienta de línea de comandos para trabajar con el mapa ferroviario de Ferromapas.
 Convierte el KMZ que se edita en Google Earth en un árbol de archivos de texto (`src/`) y vuelve a armar el KMZ a partir de ese árbol.
 
 ## 1. Decisiones ya tomadas
@@ -13,6 +13,7 @@ Convierte el KMZ que se edita en Google Earth en un árbol de archivos de texto 
 - El orden de los hijos se guarda en `children` dentro del yaml. Los nombres de archivo no determinan el orden.
 - **Nombres de archivo**: slug ASCII (`ramal-a1-cruz-del-eje-alta-cordoba.kml`). El nombre real queda en `<name>` o en el yaml. Si dos hermanos dan el mismo slug, se agrega `-2`, `-3`.
 - **El KMZ no se versiona**: está en `.gitignore`, lo genera el build y se publica en GitHub Releases.
+- **`src/` tampoco se versiona en este repo**: está en `.gitignore`. `split` no protege las ediciones manuales de `src/`.
 
 ### Qué se conserva
 Solo esto:
@@ -149,7 +150,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - `writer.py`: serialización normalizada (sección 1).
 - `tree.py` / `split`: borra y regenera `src/` aplicando la regla de profundidad, con slugs, `_folder.yaml`, `_document.yaml`, `_loose.kml` y `children` en orden.
   - Si el `_folder.yaml` anterior en la misma ruta tenía claves extra (p. ej. `code`), las conserva.
-  - Se niega a correr si `git status --porcelain -- src` no está vacío, salvo que se pase `--force`. Así no pisa ediciones manuales sin commitear.
+  - Sólo reemplaza un directorio que no exista, esté vacío o ya contenga `_document.yaml`; si no, falla sin borrar nada. No protege ediciones manuales de `src/`.
   - En el YAML, las descripciones multilínea se escriben como bloque literal `|`.
 - **Listo cuando**:
   - `ferromapas-toolkit split Ferromapas.kmz` genera el árbol.
@@ -167,7 +168,7 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - **Test semántico**: el multiconjunto `(camino de carpetas, nombre, tipo, coordenadas)` es el mismo en el original y en el reconstruido, comparando las coordenadas ya redondeadas a 6 decimales.
 - `ferromapas-toolkit compare A B`: acepta `.kmz`, `.kml` o directorio `src`. Imprime los elementos que están solo en A o solo en B, y las carpetas agregadas o eliminadas. Sirve como diff semántico para los PR.
 - `ferromapas-toolkit fmt`: normaliza `src/` en el lugar (cargar y volver a escribir).
-- **Listo cuando**: con el KMZ real, `compare original.kmz dist/Ferromapas.kmz` no muestra diferencias, y el ciclo `build → split` no produce cambios en `git diff`.
+- **Listo cuando**: con el KMZ real, `compare original.kmz dist/Ferromapas.kmz` no muestra diferencias, y el ciclo `build → split` deja `src/` idéntico byte por byte.
 
 ### Fase 5 — Validación
 `ferromapas-toolkit validate [--strict]`:
@@ -185,15 +186,16 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 ### Fase 6 — CI y releases
 **Estado: pendiente.** Las fases 0 a 5 están implementadas; esta queda para después de probar el programa a mano.
 
+> **A rediseñar:** con `src/` fuera de git, el CI no tiene árbol para validar. Los pasos 2 y 3 de abajo suponían `src/` versionado.
+
 - `ci.yml`, en cada push o PR:
   1. `pip install -e .[dev]` y `pytest`
   2. `ferromapas-toolkit validate`
-  3. `ferromapas-toolkit build`, luego `ferromapas-toolkit split dist/Ferromapas.kmz --force`, y después `git diff --exit-code src`. Esto garantiza que `src` está normalizado.
+  3. `ferromapas-toolkit build`, luego `ferromapas-toolkit split dist/Ferromapas.kmz`, y después `git diff --exit-code src`. Esto garantiza que `src` está normalizado.
 - En cada tag `v*`: build y `gh release create $TAG dist/Ferromapas.kmz`.
 
 ### Fase 7 — Importación inicial
-- Commit aparte: "Importación inicial desde Ferromapas (en Edición).kmz", que contiene solo `src/`.
-- Así el historial separa el código de los datos, y la reorganización por ramales (siguiente proyecto) arranca desde ahí con commits limpios.
+**No aplica:** `src/` no se versiona en este repo, así que no hay commit de importación inicial. La importación es un `ferromapas-toolkit split Ferromapas.kmz` local.
 
 ### Fase 8 — Registro de cambios para el sitio
 - Comando `changelog` (`ferromapas/changelog.py`): diff semántico entre el KMZ anterior y el nuevo, agrupado por ferrocarril, escrito como `X.Y.Z.yaml` en `src/data/changelog/` de ferromapas.github.io.
@@ -205,10 +207,8 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 ferromapas-toolkit build # dist/Ferromapas.kmz
 # abrir en Google Earth, editar, "Guardar lugar como…" sobre el mismo archivo
 ferromapas-toolkit split dist/Ferromapas.kmz
-git diff                              # o: ferromapas-toolkit compare HEAD-build dist/Ferromapas.kmz
-git commit
 ```
-Regla: **una sola fuente por vez**. Siempre `build` antes de abrir en Google Earth. Si editás un `.kml` a mano, hacé commit antes del próximo `split`.
+Regla: **una sola fuente por vez**. Siempre `build` antes de abrir en Google Earth. Si editás un `.kml` de `src/` a mano, hacé `build` antes del próximo `split`, que borra y regenera `src/` sin avisar.
 
 ## 6. CLAUDE.md sugerido
 
