@@ -195,6 +195,10 @@ Cada fase termina en un commit que funciona. Al final de cada una van los criter
 - Commit aparte: "Importación inicial desde Ferromapas (en Edición).kmz", que contiene solo `src/`.
 - Así el historial separa el código de los datos, y la reorganización por ramales (siguiente proyecto) arranca desde ahí con commits limpios.
 
+### Fase 8 — Registro de cambios para el sitio
+- Comando `changelog` (`ferromapas/changelog.py`): diff semántico entre el KMZ anterior y el nuevo, agrupado por ferrocarril, escrito como `X.Y.Z.yaml` en `src/data/changelog/` de ferromapas.github.io.
+- El sitio lo muestra en `/cambios/` y toma de ahí la versión actual del mapa. No modifica el formato de §1.
+
 ## 5. Flujo de trabajo diario
 
 ```

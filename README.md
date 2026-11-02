@@ -119,6 +119,17 @@ No importa el orden, y las coordenadas se comparan con 6 decimales. Sale con có
 ferromapas-toolkit compare Ferromapas.kmz dist/Ferromapas.kmz   # "Sin diferencias."
 ```
 
+### `ferromapas-toolkit changelog ANTERIOR NUEVO --version X.Y.Z [--date AAAA-MM-DD] [--out DIR] [--force]`
+
+Genera el registro de cambios de una versión nueva del mapa, para la sección "Cambios" de ferromapas.github.io. Usa el mismo diff semántico que `compare` (con `--ignore-top-level` implícito) y agrupa las diferencias por ferrocarril (`País / Ferrocarril`).
+
+Escribe `DIR/X.Y.Z.yaml` con `version`, `date`, `notes` (vacío, para completar a mano), `summary` (totales de agregados, modificados y eliminados) y `railways` (la lista por ferrocarril). Un renombre o un movimiento aparece como eliminado + agregado, porque los placemarks no tienen identificador propio. Si el archivo ya existe falla; con `--force` lo regenera y conserva las `notes`. La salida es determinística.
+
+```bash
+ferromapas-toolkit changelog ferromapas_v1.0.0.kmz ferromapas_v1.1.0.kmz --version 1.1.0 \
+  --out ../ferromapas.github.io/src/data/changelog
+```
+
 ### `ferromapas-toolkit tree [--src DIR] [--depth N] [--names]`
 
 Muestra cómo quedaron los archivos de `src/`, como el comando `tree`, en el orden de `children`. Cada `.kml` indica su cantidad de placemarks.

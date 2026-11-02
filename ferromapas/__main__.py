@@ -1,10 +1,12 @@
-"""CLI de ferromapas: split | build | validate | compare | fmt | tree | kmz2kml | kml2kmz."""
+"""CLI de ferromapas: split | build | validate | compare | changelog | fmt | tree | kmz2kml | kml2kmz."""
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from ferromapas.build import build_kml, write_kml, write_kmz
+from ferromapas.changelog import ChangelogError, build_entry, diff_by_railway, write_entry
 from ferromapas.compare import compare, load_source
 from ferromapas.config import Config, load_config
 from ferromapas.convert import kml_to_kmz, kmz_to_kml
@@ -18,6 +20,7 @@ COMMANDS = {
     "build": "Arma el KMZ a partir de src/",
     "validate": "Valida el contenido de src/",
     "compare": "Compara dos fuentes (.kmz, .kml o directorio src)",
+    "changelog": "Genera el registro de cambios (YAML) entre dos versiones, por ferrocarril",
     "fmt": "Normaliza src/ en el lugar",
     "tree": "Muestra el árbol de archivos de src/",
     "kmz2kml": "Convierte un .kmz en un .kml (extrae el doc.kml)",
@@ -86,6 +89,18 @@ def _compare(args: argparse.Namespace) -> int:
     for line in diff.only_b:
         print(f"  + {line}\n")
     return 1
+
+
+def _changelog(args: argparse.Namespace) -> int:
+    try:
+        when = date.fromisoformat(args.date) if args.date else date.today()
+        railways = diff_by_railway(load_source(args.old), load_source(args.new))
+        path = write_entry(args.out, build_entry(args.version, when, railways), args.force)
+    except (ReadError, TreeError, ChangelogError, ValueError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    print(f"Se escribió {path} ({len(railways)} ferrocarriles con cambios)")
+    return 0
 
 
 def _tree(args: argparse.Namespace) -> int:
@@ -164,6 +179,14 @@ def create_parser() -> argparse.ArgumentParser:
                 help="ignora el nombre de la carpeta de primer nivel (para versiones que la renombraron)",
             )
             sub.set_defaults(func=_compare)
+        if name == "changelog":
+            sub.add_argument("old", help="versión anterior: .kmz, .kml o directorio src")
+            sub.add_argument("new", help="versión nueva: .kmz, .kml o directorio src")
+            sub.add_argument("--version", required=True, help="número de la versión nueva (X.Y.Z)")
+            sub.add_argument("--date", help="fecha AAAA-MM-DD (por defecto: hoy)")
+            sub.add_argument("--out", default="changelog", help="directorio de salida (por defecto: changelog)")
+            sub.add_argument("--force", action="store_true", help="regenerar si ya existe (conserva las notas)")
+            sub.set_defaults(func=_changelog)
         if name == "validate":
             sub.add_argument("--src", default="src", help="directorio a validar (por defecto: src)")
             sub.add_argument("--strict", action="store_true", help="los avisos también fallan")
