@@ -1,5 +1,6 @@
 """folders.yaml -> <Style> de KML y asignación de estilos por prefijo de ruta."""
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -19,6 +20,8 @@ DEFAULT_STYLE = {
 }
 DEFAULT_ID = "default"
 STYLE_KEYS = set(DEFAULT_STYLE)
+NODE_KEYS = ("styles", "depth", "id")
+VALID_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_.-]*")
 
 
 class StylesError(Exception):
@@ -30,6 +33,7 @@ class Styles:
     default: dict = field(default_factory=lambda: dict(DEFAULT_STYLE))
     by_prefix: dict[str, dict] = field(default_factory=dict)  # ya combinados con default
     depths: dict[str, int] = field(default_factory=dict)  # prefijo -> profundidad absoluta de directorios
+    ids: dict[str, str] = field(default_factory=dict)  # prefijo -> id corto elegido en folders.yaml
 
     def prefix_for(self, slug_path: str) -> str | None:
         """Prefijo de estilo más largo que aplica a una ruta de slugs."""
@@ -42,8 +46,13 @@ class Styles:
         return best
 
 
-def style_id(prefix: str | None) -> str:
-    return DEFAULT_ID if prefix is None else "s-" + prefix.replace("/", "--")
+def style_id(prefix: str | None, styles: Styles | None = None) -> str:
+    """Id del <Style>: el `id` corto de folders.yaml si lo hay; si no, uno largo derivado del prefijo."""
+    if prefix is None:
+        return DEFAULT_ID
+    if styles is not None and prefix in styles.ids:
+        return styles.ids[prefix]
+    return "s-" + prefix.replace("/", "--")
 
 
 def load_styles(path: str | Path) -> Styles:
@@ -64,9 +73,9 @@ def load_styles(path: str | Path) -> Styles:
 def _load_folders(nodes: dict, parents: list[str], styles: Styles, where: str) -> None:
     """Recorre el árbol de carpetas; cada clave es el nombre (o slug) de una carpeta.
 
-    Un nodo puede tener `styles` (estilo para todo lo que está debajo) y `depth` (cuántos
-    niveles por debajo de esa carpeta se guardan como directorios). El resto de las claves
-    son subcarpetas.
+    Un nodo puede tener `styles` (estilo para todo lo que está debajo), `id` (nombre corto
+    del <Style> generado, requiere `styles`) y `depth` (cuántos niveles por debajo de esa
+    carpeta se guardan como directorios). El resto de las claves son subcarpetas.
     """
     if not isinstance(nodes, dict):
         raise StylesError(f"{where}: se esperaba un mapa de carpetas")
@@ -80,12 +89,24 @@ def _load_folders(nodes: dict, parents: list[str], styles: Styles, where: str) -
             override = node["styles"] or {}
             _check_keys(override, f"{where}: {prefix}")
             styles.by_prefix[prefix] = {**styles.default, **override}
+        if "id" in node:
+            _load_id(node["id"], prefix, styles, where)
         if "depth" in node:
             if not isinstance(node["depth"], int) or isinstance(node["depth"], bool) or node["depth"] < 0:
                 raise StylesError(f"{where}: {prefix}: depth debe ser un entero >= 0")
             styles.depths[prefix] = len(path) + node["depth"]
-        children = {k: v for k, v in node.items() if k not in ("styles", "depth")}
+        children = {k: v for k, v in node.items() if k not in NODE_KEYS}
         _load_folders(children, path, styles, where)
+
+
+def _load_id(value: object, prefix: str, styles: Styles, where: str) -> None:
+    if prefix not in styles.by_prefix:
+        raise StylesError(f"{where}: {prefix}: 'id' requiere 'styles'")
+    if not isinstance(value, str) or not VALID_ID.fullmatch(value):
+        raise StylesError(f"{where}: {prefix}: id inválido {value!r} (letras, números, '_', '-' y '.', sin espacios)")
+    if value == DEFAULT_ID or value in styles.ids.values():
+        raise StylesError(f"{where}: {prefix}: el id {value!r} ya está en uso")
+    styles.ids[prefix] = value
 
 
 def _check_keys(style: dict, where: str) -> None:
@@ -146,7 +167,7 @@ def assign_styles(root: Folder, styles: Styles) -> dict[int, str]:
         used: set[str] = set()
         for child in folder.children:
             if isinstance(child, Placemark):
-                result[id(child)] = style_id(styles.prefix_for(slug_path))
+                result[id(child)] = style_id(styles.prefix_for(slug_path), styles)
                 continue
             slug = child.slug if child.slug is not None else _unique_slug(child.name, used)
             used.add(slug)
@@ -159,5 +180,5 @@ def assign_styles(root: Folder, styles: Styles) -> dict[int, str]:
 def all_style_xml(styles: Styles) -> list[str]:
     lines = style_xml(DEFAULT_ID, styles.default)
     for prefix in sorted(styles.by_prefix):
-        lines += style_xml(style_id(prefix), styles.by_prefix[prefix])
+        lines += style_xml(style_id(prefix, styles), styles.by_prefix[prefix])
     return lines

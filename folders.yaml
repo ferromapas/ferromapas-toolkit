@@ -2,15 +2,16 @@ default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapf
 # Árbol de carpetas (por nombre o slug). En cada nodo:
 #   styles: estilo para todo lo que está debajo
 #   depth:  cuántos niveles por debajo de esa carpeta se guardan como directorios
+#   id:     nombre corto del <Style> generado (requiere styles); si falta, se deriva de la ruta
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
-      Ferrocarril Belgrano:   { styles: { color: "#D30000" } }
-      Ferrocarril Mitre:      { styles: { color: "#00FF00" } }
-      Ferrocarril Roca:       { styles: { color: "#FF00FF" } }
-      Ferrocarril San Martín: { styles: { color: "#0055FF" } }
-      Ferrocarril Sarmiento:  { styles: { color: "#FFAAFF" } }
-      Ferrocarril Urquiza:    { styles: { color: "#55FFFF" } }
-      Otros Ferrocarriles:    { styles: { color: "#FF5500" } }
-      Proyectos:              { styles: { color: "#FFFF00" } }
-    Ferrocarriles de Chile:   { styles: { color: "#D30000" } }
+      Ferrocarril Belgrano:   { styles: { color: "#D30000" }, id: belgrano }
+      Ferrocarril Mitre:      { styles: { color: "#00FF00" }, id: mitre }
+      Ferrocarril Roca:       { styles: { color: "#FF00FF" }, id: roca }
+      Ferrocarril San Martín: { styles: { color: "#0055FF" }, id: sanmartin }
+      Ferrocarril Sarmiento:  { styles: { color: "#FFAAFF" }, id: sarmiento }
+      Ferrocarril Urquiza:    { styles: { color: "#55FFFF" }, id: urquiza }
+      Otros Ferrocarriles:    { styles: { color: "#FF5500" }, id: otros }
+      Proyectos:              { styles: { color: "#FFFF00" }, id: proyectos }
+    Ferrocarriles de Chile:   { styles: { color: "#D30000" }, id: chile }

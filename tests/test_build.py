@@ -140,3 +140,28 @@ def test_cli_build_version(tmp_path):
     args = ["build", "--src", str(src), "--folders", str(tmp_path / "no.yaml"), "--version", "v1", "--kml", "-o", str(out)]
     assert main(args) == 0
     assert "<name>Ferromapas (v1)</name>" in out.read_text(encoding="utf-8")
+
+
+def test_style_short_id(tmp_path):
+    f = tmp_path / "folders.yaml"
+    f.write_text('folders:\n  A:\n    B: { styles: { color: "#FF0000" }, id: bel }\n')
+    root = Folder("D", None, [Folder("A", None, [Folder("B", None, [pm("x")])])])
+    kml = build_kml(root, load_styles(f))
+    assert '<Style id="bel">' in kml and "#bel</styleUrl>" in kml
+    assert "s-a--b" not in kml
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "A: { id: x }",  # id sin styles
+        'A: { styles: { color: "#FF0000" }, id: "con espacio" }',
+        'A: { styles: { color: "#FF0000" }, id: default }',
+        'A: { styles: { color: "#FF0000" }, id: x }\n  B: { styles: { color: "#00FF00" }, id: x }',
+    ],
+)
+def test_style_id_invalid(tmp_path, body):
+    f = tmp_path / "folders.yaml"
+    f.write_text("folders:\n  " + body + "\n")
+    with pytest.raises(StylesError):
+        load_styles(f)

@@ -205,13 +205,14 @@ Los estilos se aplican solo en el `build`. Las carpetas se anidan como en el map
 
 - `styles`: estilo para todo lo que está debajo.
 - `depth`: cuántos niveles por debajo de esa carpeta se guardan como directorios. `split` y `fmt` lo usan y gana sobre `max_dir_depth`.
+- `id`: nombre corto del `<Style>` generado (requiere `styles`). Sin `id`, el nombre se deriva de la ruta, por ejemplo `s-ferromapas--ferrocarriles-argentinos--ferrocarril-belgrano`. Solo letras, números, `_`, `-` y `.`, sin espacios; no puede repetirse ni llamarse `default`.
 
 ```yaml
 default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
-      Ferrocarril Belgrano: { styles: { color: "#6A1B9A" }, depth: 2 }   # baja un nivel más que Chile
+      Ferrocarril Belgrano: { styles: { color: "#6A1B9A" }, id: belgrano, depth: 2 }   # baja un nivel más que Chile
     Ferrocarriles de Chile:
       styles: { color: "#C62828" }
 ```
