@@ -65,6 +65,27 @@ Al hacer `split`, las coordenadas se **redondean a 6 decimales** (el KMZ origina
 
 Más detalles en [PLAN.md](PLAN.md).
 
+## Generar una versión nueva
+
+1. Dejá `src/` al día (`split`) y actualizá la línea `Versión: X.Y.Z` de la `description` en `src/ferromapas/_folder.yaml`.
+2. Armá el KMZ nuevo. Es el archivo que se publica; no va a este repo (`*.kmz` está en `.gitignore`):
+
+   ```bash
+   ferromapas-toolkit validate
+   ferromapas-toolkit build -o ../datos/ferromapas_vX.Y.Z.kmz
+   ```
+
+3. Generá el registro de cambios comparando con el KMZ anterior publicado. Con `--out` queda directamente en el sitio:
+
+   ```bash
+   ferromapas-toolkit changelog ../ferromapas.github.io/public/descargas/ferromapas_vA.B.C.kmz \
+     ../datos/ferromapas_vX.Y.Z.kmz --version X.Y.Z \
+     --out ../ferromapas.github.io/src/data/changelog
+   ```
+
+4. Abrí el `X.Y.Z.yaml` generado y completá `notes` (acepta markdown).
+5. Para publicar, seguí "Publicar una versión nueva del mapa" en el README de `ferromapas.github.io`.
+
 ## Comandos
 
 ### `ferromapas-toolkit split ENTRADA [--src DIR] [--config ARCHIVO] [--folders ARCHIVO]`
