@@ -61,9 +61,12 @@ def load_styles(path: str | Path) -> Styles:
     if not path.exists():
         return Styles()
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    if "styles" in data:
-        raise StylesError(f"{path}: 'styles' ya no existe; usá un árbol de carpetas anidadas bajo 'folders'")
-    default = {**DEFAULT_STYLE, **(data.get("default") or {})}
+    top = data.get("styles") or {}
+    if not isinstance(top, dict) or set(top) - {"default"}:
+        raise StylesError(
+            f"{path}: 'styles' solo admite 'default'; los estilos por carpeta van en un árbol anidado bajo 'folders'"
+        )
+    default = {**DEFAULT_STYLE, **(top.get("default") or {})}
     _check_keys(default, f"{path}: default")
     styles = Styles(default)
     _load_folders(data.get("folders") or {}, [], styles, str(path))

@@ -208,7 +208,8 @@ Los estilos se aplican solo en el `build`. Las carpetas se anidan como en el map
 - `id`: nombre corto del `<Style>` generado (requiere `styles`). Sin `id`, el nombre se deriva de la ruta, por ejemplo `s-ferromapas--ferrocarriles-argentinos--ferrocarril-belgrano`. Solo letras, números, `_`, `-` y `.`, sin espacios; no puede repetirse ni llamarse `default`.
 
 ```yaml
-default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
+styles:
+  default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
@@ -217,7 +218,7 @@ folders:
       styles: { color: "#C62828" }
 ```
 
-Los colores van como `#RRGGBB`. Las claves que no se indican se toman de `default`. Una clave desconocida es un error.
+Los colores van como `#RRGGBB`. Las claves que no se indican se toman de `styles.default`. Una clave desconocida es un error.
 
 ## Qué se conserva y qué se descarta
 

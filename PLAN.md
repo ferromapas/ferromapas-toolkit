@@ -71,7 +71,8 @@ Una carpeta puntual se puede cortar distinto con `depth` en `folders.yaml` (ver 
 ### Estilos y profundidades (`folders.yaml`)
 Las carpetas se anidan como en el mapa (por nombre o por slug). Cada nodo puede tener `styles` (estilo para todo lo que está debajo), `depth` (ver arriba) e `id` (nombre corto del `<Style>` generado; requiere `styles`). Los estilos solo se aplican en el build.
 ```yaml
-default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
+styles:
+  default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.4, label_scale: 0.7, polygon_opacity: 0.35 }
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
@@ -80,7 +81,7 @@ folders:
       # ...
 ```
 - El build genera un `<Style>` por entrada con `styles`, con LineStyle, IconStyle, LabelStyle y PolyStyle, en el `<Document>`. Sin `id`, el nombre se deriva de la ruta (`s-ferromapas--ferrocarriles-argentinos--ferrocarril-belgrano`).
-- Las claves de `styles` que no se indican se toman de `default`. Una clave desconocida es un error.
+- Las claves de `styles` que no se indican se toman de `styles.default`. Una clave desconocida es un error.
 - Cada Placemark recibe el `styleUrl` correspondiente y cada `LineString` lleva `tessellate=1`.
 - Hay que convertir los colores de `#RRGGBB` a `aabbggrr`, el formato de KML.
 

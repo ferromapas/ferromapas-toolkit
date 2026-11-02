@@ -1,10 +1,11 @@
-default:
-  color: "#757575"
-  line_width: 2.5
-  icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"
-  icon_scale: 0.3
-  label_scale: 0.7
-  polygon_opacity: 0.5
+styles:
+  default:
+    color: "#757575"
+    line_width: 2.5
+    icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"
+    icon_scale: 0.3
+    label_scale: 0.7
+    polygon_opacity: 0.5
 # Árbol de carpetas (por nombre o slug). En cada nodo:
 #   styles: estilo para todo lo que está debajo
 #   depth:  cuántos niveles por debajo de esa carpeta se guardan como directorios
