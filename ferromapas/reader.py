@@ -25,6 +25,10 @@ KML_NAMESPACES = {
 GX_NAMESPACE = "http://www.google.com/kml/ext/2.2"
 ATOM_NAMESPACE = "http://www.w3.org/2005/Atom"
 
+# Tope del .kml descomprimido dentro de un KMZ: protege contra zip bombs.
+# El mapa real pesa decenas de MB, así que 256 MB deja mucho margen.
+MAX_KML_BYTES = 256 * 1024 * 1024
+
 # Se descartan en silencio (PLAN.md §1), pero se cuentan para el resumen.
 DISCARDED_COMMON = {
     "Style", "StyleMap", "styleUrl", "open", "visibility", "LookAt", "Camera",
@@ -92,6 +96,12 @@ def extract_kml(kmz: str | Path) -> tuple[bytes, list[str]]:
         )
         if inner is None:
             raise ReadError(f"{kmz}: el KMZ no contiene ningún .kml")
+        size = zf.getinfo(inner).file_size  # zipfile no lee más que esto
+        if size > MAX_KML_BYTES:
+            raise ReadError(
+                f"{kmz}: {inner} descomprimido pesa {size / 2**20:.0f} MB, "
+                f"más que el máximo de {MAX_KML_BYTES // 2**20} MB"
+            )
         return zf.read(inner), [n for n in names if n != inner]
 
 

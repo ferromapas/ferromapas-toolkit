@@ -123,3 +123,16 @@ def test_nested_document_becomes_folder():
     assert root.children[0].children[0].name == "Doc"
     assert (report.folders, report.nested_documents) == (1, 1)
     assert "<Document> anidado" in report.warnings[0]
+
+
+def test_extract_kml_rejects_oversized_kml(tmp_path, monkeypatch):
+    from ferromapas import reader
+
+    kmz = tmp_path / "bomba.kmz"
+    with zipfile.ZipFile(kmz, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("doc.kml", "<kml>" + "a" * 10_000 + "</kml>")
+    monkeypatch.setattr(reader, "MAX_KML_BYTES", 1_000)
+    with pytest.raises(ReadError, match="máximo"):
+        reader.extract_kml(kmz)
+    monkeypatch.setattr(reader, "MAX_KML_BYTES", 1_000_000)
+    assert reader.extract_kml(kmz)[0].startswith(b"<kml>")
