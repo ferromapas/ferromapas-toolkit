@@ -1,4 +1,10 @@
-default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png", icon_scale: 0.3, label_scale: 0.7, polygon_opacity: 0.5 }
+default:
+  color: "#757575"
+  line_width: 2.5
+  icon: "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"
+  icon_scale: 0.3
+  label_scale: 0.7
+  polygon_opacity: 0.5
 # Árbol de carpetas (por nombre o slug). En cada nodo:
 #   styles: estilo para todo lo que está debajo
 #   depth:  cuántos niveles por debajo de esa carpeta se guardan como directorios
@@ -6,13 +12,49 @@ default: { color: "#757575", line_width: 2.5, icon: "http://maps.google.com/mapf
 folders:
   Ferromapas:
     Ferrocarriles Argentinos:
-      Ferrocarril Belgrano:   { styles: { color: "#D30000" }, id: fa-fcgb }
-      Ferrocarril Mitre:      { styles: { color: "#00FF00" }, id: fa-fcgbm }
-      Ferrocarril Roca:       { styles: { color: "#FF00FF" }, id: fa-fcgr }
-      Ferrocarril San Martín: { styles: { color: "#0055FF" }, id: fa-fcgsm }
-      Ferrocarril Sarmiento:  { styles: { color: "#FFAAFF" }, id: fa-fcdfs }
-      Ferrocarril Urquiza:    { styles: { color: "#55FFFF" }, id: fa-fcgu }
-      Otros Ferrocarriles:    { styles: { color: "#FF5500" }, id: fa-otros }
-      Proyectos:              { styles: { color: "#FFFF00" }, id: fa-proyectos }
+      Ferrocarril Belgrano:
+        styles:
+          color: "#D30000"
+        id: fa-fcgb
+        depth: 1
+      Ferrocarril Mitre:
+        styles:
+          color: "#00FF00"
+        id: fa-fcgbm
+        depth: 1
+      Ferrocarril Roca:
+        styles:
+          color: "#FF00FF"
+        id: fa-fcgr
+        depth: 1
+      Ferrocarril San Martín:
+        styles:
+          color: "#0055FF"
+        id: fa-fcgsm
+        depth: 1
+      Ferrocarril Sarmiento:
+        styles:
+          color: "#FFAAFF"
+        id: fa-fcdfs
+        depth: 1
+      Ferrocarril Urquiza:
+        styles:
+          color: "#55FFFF"
+        id: fa-fcgu
+        depth: 1
+      Otros Ferrocarriles:
+        styles:
+          color: "#FF5500"
+        id: fa-otros
+        depth: 1
+      Proyectos:
+        styles:
+          color: "#FFFF00"
+        id: fa-proyectos
+        depth: 1
     Ferrocarriles de Chile:
-      Ferrocarril Trasandino Central Chileno: { styles: { color: "#D30000" }, id: fc-fctc }
+      Ferrocarril Trasandino Central Chileno:
+        styles:
+          color: "#D30000"
+        id: fc-fctc
+        depth: 1
