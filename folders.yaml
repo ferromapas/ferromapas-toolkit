@@ -43,6 +43,11 @@ folders:
           color: "#55FFFF"
         id: fa-fcgu
         depth: 1
+      Metrotranvía de Mendoza:
+        styles:
+          color: "#8000FF"
+        id: fa-mtm
+        depth: 1
       Otros Ferrocarriles:
         styles:
           color: "#FF5500"
